@@ -1,0 +1,30 @@
+TournamentBracket.UI/
+├── wwwroot/
+│   ├── css/
+│   │   ├── app.css                 // Global styles, typography, and CSS variables
+│   │   └── bracket.css             // Specific CSS Grid/Flexbox rules for the playoff tree
+│   ├── icon-512.png                // PWA home screen icon
+│   ├── index.html                  // SPA entry point
+│   ├── manifest.json               // PWA manifest (app name, colors, standalone display mode)
+│   ├── service-worker.js           // Development offline caching logic
+│   └── service-worker.published.js // Production SW (where you'll intercept Sheets API calls)
+├── Models/
+│   ├── MatchData.cs                // Record: MatchId, TeamCodes, Scores, Status
+│   ├── PoolStanding.cs             // Record: TeamCode, Points, PointDifferential
+│   ├── Team.cs                     // Record: Code, Name, Pool, FlagUrl, Owner
+│   └── TournamentSettings.cs       // Record: PointsForWin, PointsForDraw, etc.
+├── Services/
+│   ├── GoogleSheetsClient.cs       // Handles HttpClient GET requests to the Sheets API
+│   └── TournamentStateService.cs   // Singleton holding state, runs LINQ aggregations for rankings
+├── Components/                     // Reusable, stateless UI blocks
+│   ├── BracketNode.razor           // Renders a single match box within the playoff tree
+│   ├── MatchCard.razor             // Standard UI card for Fixtures
+│   └── PoolTable.razor             // Renders the standings table for a specific pool
+├── Pages/                          // Routable views (replacing your visible Sheet tabs)
+│   ├── Bracket.razor               // @page "/bracket"
+│   ├── Fixtures.razor              // @page "/fixtures"
+│   └── Pools.razor                 // @page "/pools"
+├── _Imports.razor                  // Global using directives (e.g., @using TournamentBracket.UI.Models)
+├── App.razor                       // Blazor Router configuration
+├── Program.cs                      // WebAssemblyHostBuilder and Dependency Injection setup
+└── TournamentBracket.UI.csproj     // .NET project file

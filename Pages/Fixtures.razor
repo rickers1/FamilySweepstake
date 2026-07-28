@@ -1,0 +1,79 @@
+@* // Ignore Spelling: ddd *@
+
+@page "/fixtures/{TournamentCode}"
+
+@using FamilySweepstake.Components
+@using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
+
+@inject CacheService CacheSvc
+
+<MudText Typo="Typo.h4" Class="mb-4">Fixtures</MudText>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading fixtures...</MudText>
+    </MudStack>
+}
+else
+{
+    @foreach (var fixtureForDay in fixturesByDate)
+    {
+        <MudPaper Class="pa-4 mb-6" Elevation="2">
+            <MudStack Row AlignItems="AlignItems.Center">
+
+                <MudText Typo="Typo.h6">@fixtureForDay.Date.ToString(MATCH_DATE_FORMAT)</MudText>
+
+                @if (fixtureForDay.Stage is not null)
+                {
+                    <MudText Typo="Typo.h6" Class="ml-2">@fixtureForDay.Stage</MudText>
+                }
+
+            </MudStack>
+
+            @foreach (var fixture in fixtureForDay.Fixtures)
+            {
+                <FixtureRow Fixture="fixture" />
+            }
+        </MudPaper>
+    }
+}
+
+@code {
+    [Parameter] public string TournamentCode { get; set; } = "TBA";
+
+    private const string MATCH_DATE_FORMAT = "ddd, d MMM";
+
+    private bool isLoading = true;
+    private IEnumerable<FixtureGroupViewModel> fixturesByDate = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Select tournament (this reloads TeamsCache automatically if needed)
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+
+        var fixtures = await CacheSvc.Service.GetFixturesAsync(TournamentCode);
+
+        fixturesByDate = fixtures
+            .OrderBy(f => f.MatchStart)
+            .GroupBy(f => f.MatchStart.Date)
+            .OrderBy(g => g.Key)
+            .Select(g =>
+            {
+                var ordered = g.OrderBy(f => f.MatchStart);
+
+                // Pick stage from the first fixture that has one
+                var stage = ordered.FirstOrDefault(f => !string.IsNullOrWhiteSpace(f.Stage))?.Stage;
+
+                return new FixtureGroupViewModel(
+                    g.Key,
+                    ordered,
+                    stage
+                );
+            });
+
+        isLoading = false;
+    }
+}

@@ -1,0 +1,66 @@
+@* // Ignore Spelling: center py tt *@
+
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+@using static FamilySweepstake.Models.Constants
+
+@inject CacheService CacheSvc
+
+<MudGrid Class="py-2 align-center">
+    <!-- Time -->
+    <MudItem xs="4" sm="1">
+        <MudText Typo="Typo.body2">@_matchStart</MudText>
+    </MudItem>
+
+    <!-- Home Team -->
+    <MudItem xs="8" sm="3">
+        <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" />
+
+    </MudItem>
+
+    <!-- Home Score -->
+    <MudItem xs="3" sm="1">
+        <AnimatedScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin"/>
+    </MudItem>
+
+    <!-- VS -->
+    <MudItem xs="2" sm="1" Class="text-center">
+        <MudText Typo="Typo.body2">vs</MudText>
+    </MudItem>
+
+    <!-- Away Score -->
+    <MudItem xs="3" sm="1">
+        <AnimatedScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" />
+    </MudItem>
+
+    <!-- Away Team -->
+    <MudItem xs="8" sm="3">
+        <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
+    </MudItem>
+
+    <!-- Result -->
+    @* <MudItem xs="8" sm="2">
+        <FixtureResultCard Fixture="Fixture" />
+    </MudItem> *@
+
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public FixtureModel Fixture { get; set; }
+    [Parameter] public bool ShowMatchDateAndTime { get; set; }
+
+    private Guid? _homeTeamOwnerId;
+    private Guid? _awayTeamOwnerId;
+    string _matchStart = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _matchStart = Fixture.MatchStart.ToString(ShowMatchDateAndTime ? MATCH_DATE_TIME_FORMAT : MATCH_TIME_FORMAT);
+
+        _homeTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.HomeCode, Fixture.IsPlayoffs);
+        _awayTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.AwayCode, Fixture.IsPlayoffs);
+    }
+
+}

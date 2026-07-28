@@ -1,0 +1,56 @@
+@* // Ignore Spelling: color eee pb px sm *@
+
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+
+@inject CacheService CacheSvc
+
+<MudStack Row AlignItems="AlignItems.Stretch" Class="pb-2">
+    <MudBadge Visible="@(_team?.WorldRanking is not null)" Content="@_team!.WorldRanking" Overlap="true" Class="@_flagOrderCss" Color="Color.Primary">
+        <MudImage Src="@_team?.FlagUrl" Alt="@_team?.Code" Width="45" Class="rounded-sm" Fluid Elevation="1" />
+    </MudBadge>
+
+    @if (ShowOwner)
+    {
+        <OwnerCard TeamOwner="_teamOwner" Class="@_nameOrderCss" Style="@_ownerColoursCss">
+            <MudText Typo="Typo.body2">@_team?.Name</MudText>
+            <MudText Typo="Typo.subtitle2">[@_teamOwner?.Name]</MudText>
+        </OwnerCard>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2">@_team?.Name</MudText>
+    }
+
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public string TeamCode { get; set; }
+    [Parameter] public Guid? OwnerId { get; set; }
+    [Parameter] public bool ShowOwner { get; set; }
+    [Parameter] public bool RightAlign { get; set; }
+
+    private TeamModel? _team;
+    private FamilyMemberModel? _teamOwner;
+    private string _ownerColoursCss = default!;
+    private string _flagOrderCss = default!;
+    private string _nameOrderCss = default!;
+    const string DEFAULT_AVATAR = "?";
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _team = CacheSvc.Teams.GetByCode(TeamCode);
+        if (ShowOwner)
+        {
+            _teamOwner = CacheSvc.FamilyMembers.GetOrDefault(OwnerId);
+            _ownerColoursCss = $"background-color:{_teamOwner.BackgroundColor}; color:{_teamOwner.ForegroundColor};";
+        }
+        _flagOrderCss = GetOrderClass(1, 2);
+        _nameOrderCss = GetOrderClass(2, 1, "flex-grow-1 px-2");
+    }
+
+    private string GetOrderClass(int leftOrder, int rightOrder, string? otherClasses = null)
+        => $"order-{(RightAlign ? rightOrder : leftOrder)} {otherClasses}".Trim();
+}

@@ -1,0 +1,33 @@
+@using FamilySweepstake.Models
+
+<MudStack Row Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="@Class" Style="@Style">
+
+    <MudAvatar Size="Size.Medium" Color="Color.Transparent" Class="owner-avatar">
+        @if (TeamOwner.AvatarUrl is not null)
+        {
+            <MudImage Src="@TeamOwner.AvatarUrl" Alt="@TeamOwner.Name" />
+        }
+        else
+        {
+            @DEFAULT_AVATAR
+        }
+    </MudAvatar>
+
+    @if (TeamOwner.AvatarUrl is null || ShowOwnerName is true)
+    {
+        <MudText Typo="Typo.h6">@TeamOwner.Name</MudText>
+    }
+
+    @ChildContent
+
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public FamilyMemberModel TeamOwner { get; set; }
+    [Parameter] public bool? ShowOwnerName { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private const string DEFAULT_AVATAR = "?";
+}

@@ -1,0 +1,70 @@
+@page "/pools/{TournamentCode}"
+
+@using FamilySweepstake.Components
+@using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
+
+@inject CacheService CacheSvc
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h4">Pool Play & Standings</MudText>
+</MudStack>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading pools...</MudText>
+    </MudStack>
+}
+else
+{
+    <MudGrid Spacing="5" Justify="Justify.Center">
+        @foreach (var poolGroup in teamsByPool)
+        {
+            <MudItem xs="12" md="6" lg="4">
+                <PoolCard Pool="poolGroup" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public string TournamentCode { get; set; } = string.Empty;
+
+    private bool isLoading = true;
+    private bool _isFIFA;
+    private IEnumerable<PoolGroupViewModel> teamsByPool = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        // Select tournament (this reloads TeamsCache automatically if needed)
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+
+        var tournament = CacheSvc.Tournaments.GetCurrent();
+        if (tournament is null)
+        {
+            isLoading = false;
+            return;
+        }
+
+        _isFIFA = tournament.TournamentType == Models.TournamentType.Soccer;
+
+        // Now get pool standings from the service
+        var poolTeams = await CacheSvc.Service.GetPoolStandingsAsync(tournament.Id);
+
+        teamsByPool = poolTeams
+            .GroupBy(t => t.PoolName)
+            .OrderBy(g => g.Key)
+            .Select(g =>
+                new PoolGroupViewModel(
+                    g.Key,
+                    g//.OrderByDescending(t => t.PoolRanking)
+                )
+            );
+
+        isLoading = false;
+    }
+}

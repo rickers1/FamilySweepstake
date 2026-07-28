@@ -1,0 +1,48 @@
+@using FamilySweepstake.Models
+
+<div class="card border-secondary shadow-sm" style="font-size: 0.9rem;">
+    <div class="list-group list-group-flush">
+
+        <!-- Home Team -->
+        <div class="list-group-item d-flex justify-content-between align-items-center p-2 @(HomeWon ? "bg-light fw-bold" : "")">
+            <span class="text-truncate" style="max-width: 150px;">
+                @GetTeamName(Match.HomeCode)
+            </span>
+            <span class="badge @(HomeWon ? "bg-primary" : "bg-secondary")">
+                @(Match.IsCompleted ? Match.HomeTotal.ToString() : "-")
+            </span>
+        </div>
+
+        <!-- Away Team -->
+        <div class="list-group-item d-flex justify-content-between align-items-center p-2 @(AwayWon ? "bg-light fw-bold" : "")">
+            <span class="text-truncate" style="max-width: 150px;">
+                @GetTeamName(Match.AwayCode)
+            </span>
+            <span class="badge @(AwayWon ? "bg-primary" : "bg-secondary")">
+                @(Match.IsCompleted ? Match.AwayTotal.ToString() : "-")
+            </span>
+        </div>
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(Match.MatchClock) && !Match.IsCompleted)
+    {
+        <div class="card-footer p-1 text-center bg-danger text-white small fw-bold blink">
+            @Match.MatchClock
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Fixture Match { get; set; } = null!;
+
+    [Parameter]
+    public List<Team> Teams { get; set; } = new();
+
+    private bool HomeWon => Match.IsCompleted && Match.HomeTotal > Match.AwayTotal;
+    private bool AwayWon => Match.IsCompleted && Match.AwayTotal > Match.HomeTotal;
+
+    private string GetTeamName(string code) =>
+        Teams.FirstOrDefault(t => t.Code == code)?.Name ?? code ?? "TBD";
+}

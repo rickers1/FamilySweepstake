@@ -1,0 +1,158 @@
+@page "/bracket/{TournamentCode}"
+
+@using FamilySweepstake.Components
+@using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
+@using static FamilySweepstake.Models.Constants
+
+@inject CacheService CacheSvc
+
+<MudText Typo="Typo.h4" Class="mb-4">Playoff Bracket</MudText>
+
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudHidden Breakpoint="Breakpoint.SmAndDown">
+        <MudGrid Class="bracket-grid" Gutter="3">
+            @foreach (var round in rounds)
+            {
+                <MudItem xs="12" md="3">
+                    <MudPaper Elevation="1" Class="pa-2">
+                        <MudText Typo="Typo.h6" Class="round-title">@round.Stage</MudText>
+
+                        <MudStack Spacing="2">
+                            @foreach (var match in round.Matches)
+                            {
+                                <MudPaper Elevation="2" Class="pa-2 bracket-match">
+                                    <MudStack Spacing="1">
+                                        <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="SpaceBetween">
+                                            <TeamCard TeamCode="@match.HomeTeam"
+                                                      OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.HomeTeam, true)"
+                                                      ShowOwner="true" />
+                                            <AnimatedScoreChip TeamCode="@match.Fixture.HomeCode"
+                                                               Score="@match.Fixture.HomeScore"
+                                                               ScorePens="@match.Fixture.HomePens"
+                                                               Winner="@match.HomeWin" />
+                                        </MudStack>
+
+                                        <MudDivider />
+
+                                        <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="SpaceBetween">
+                                            <TeamCard TeamCode="@match.AwayTeam"
+                                                      OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.AwayTeam, true)"
+                                                      ShowOwner="true" />
+                                            <AnimatedScoreChip TeamCode="@match.Fixture.AwayCode"
+                                                               Score="@match.Fixture.AwayScore"
+                                                               ScorePens="@match.Fixture.AwayPens"
+                                                               Winner="@match.AwayWin" />
+                                        </MudStack>
+
+                                        <MudText Typo="Typo.caption" Align="Align.Center">
+                                            @match.Fixture.MatchStart.ToString("ddd h:mm tt")
+                                        </MudText>
+                                    </MudStack>
+                                </MudPaper>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudHidden>
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <MudStack Spacing="4">
+            @foreach (var round in rounds)
+            {
+                <MudPaper Elevation="1" Class="pa-2">
+                    <MudText Typo="Typo.h6" Class="round-title-mobile">@round.Stage</MudText>
+
+                    <MudStack Spacing="2">
+                        @foreach (var match in round.Matches)
+                        {
+                            <MudPaper Elevation="2" Class="pa-2 bracket-match-mobile">
+                                <MudStack Spacing="1">
+                                    <TeamCard TeamCode="@match.HomeTeam"
+                                              OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.HomeTeam, true)"
+                                              ShowOwner="true" />
+                                    <AnimatedScoreChip TeamCode="@match.Fixture.HomeCode"
+                                                       Score="@match.Fixture.HomeScore"
+                                                       ScorePens="@match.Fixture.HomePens"
+                                                       Winner="@match.HomeWin" />
+
+                                    <MudDivider />
+
+                                    <TeamCard TeamCode="@match.AwayTeam"
+                                              OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.AwayTeam, true)"
+                                              ShowOwner="true" />
+                                    <AnimatedScoreChip TeamCode="@match.Fixture.AwayCode"
+                                                       Score="@match.Fixture.AwayScore"
+                                                       ScorePens="@match.Fixture.AwayPens"
+                                                       Winner="@match.AwayWin" />
+                                    <MudText Typo="Typo.caption">
+                                        @match.Fixture.MatchStart.ToString("ddd h:mm tt")
+                                    </MudText>
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudStack>
+    </MudHidden>
+
+}
+
+@code {
+    [Parameter] public string TournamentCode { get; set; } = "TBA";
+
+    private bool isLoading = true;
+    private List<BracketRound> rounds = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadBracketAsync();
+        isLoading = false;
+    }
+
+    protected async Task LoadBracketAsync()
+    {
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+
+        var fixtures = await CacheSvc.Service.GetFixturesAsync(TournamentCode);
+
+        var playoffFixtures = fixtures.Where(f => f.IsPlayoffs).ToList();
+
+        rounds = playoffFixtures
+            .GroupBy(f => f.Stage)
+            .OrderBy(g => StageOrder(g.Key))
+            .Select(g => new BracketRound(
+                g.Key!,
+                g.Select(f => new BracketMatch(
+                    g.Key!,
+                    f,
+                    f.HomeCode!,
+                    f.AwayCode!,
+                    f.HomeWin,
+                    f.AwayWin
+                )).ToList()
+            ))
+            .ToList();
+    }
+
+    private int StageOrder(string? stage)
+    {
+        return stage switch
+        {
+            "Round of 32" => 1,
+            "Round of 16" => 2,
+            "Quarterfinal" => 3,
+            "Semifinal" => 4,
+            "Final" => 5,
+            _ => 99
+        };
+    }
+
+}

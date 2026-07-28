@@ -1,0 +1,34 @@
+@using FamilySweepstake.Services
+
+@inject FamilyMemberCache FamilyMemberCache
+@inject TournamentCache TournamentCache
+@inject ITournamentService TournamentSvc
+
+@if (!_initialized)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading data...</MudText>
+    </MudStack>
+}
+else
+{
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+}
+
+@code {
+    private bool _initialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await TournamentCache.InitializeAsync(TournamentSvc);
+        await FamilyMemberCache.InitializeAsync(TournamentSvc);
+
+        _initialized = true;
+    }
+}

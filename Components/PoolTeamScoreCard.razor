@@ -1,0 +1,108 @@
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
+
+@inject CacheService CacheSvc
+
+<MudSimpleTable Dense Bordered Striped Class="pool-table">
+    <thead>
+        <tr>
+            <th>Team</th>
+            @if (ShowWDL)
+            {
+                <th>W‑D‑L</th>
+            }
+
+            <th>@_otherHeader</th>
+
+            @if (ShowPoints)
+            {
+                <th>Points</th>
+            }
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var team in Teams)
+        {
+            <tr class="team-row @(IsAutoQualifier(team) ? "playoff-team" : "")">
+                <td class="team-cell">
+                    <TeamCard TeamCode="@team.TeamCode" ShowOwner="ShowOwner" OwnerId="GetTeamOwner(team)" />
+                </td>
+
+                @if (ShowWDL)
+                {
+                    <td>
+                        @team.Wins‑@team.Draws‑@team.Losses
+                    </td>
+                    <td>
+                        @if (_tournamentIsSoccer)
+                        {
+                            @team.FifaPointDeductions
+                        }
+                        else
+                        {
+                            @team.RwcBonusPoints
+                        }
+                    </td>
+                }
+
+                @if (ShowPoints)
+                {
+                    <td>
+                        <AnimatedScoreChip Score="@team.Points" TeamCode="@team.TeamCode" />
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<PoolStandingModel> Teams { get; set; } = [];
+    [Parameter] public bool ShowOwner { get; set; } = true;
+    [Parameter] public bool ShowWDL { get; set; } = false;
+    [Parameter] public bool ShowPoints { get; set; } = true;
+
+    private List<PoolStandingViewModel> _teamsWithOwners = [];
+    private readonly Dictionary<string, int> _previousPoints = new();
+    private bool _tournamentIsSoccer;
+    private string _otherHeader = "BP";
+    private const string POINTS_CHIP_CSS = "points-chip";
+    private const string POINTS_CHIP_ANIMATED_CSS = POINTS_CHIP_CSS + " updated";
+
+    protected override void OnParametersSet()
+    {
+        _tournamentIsSoccer = (CacheSvc.Tournaments.GetCurrent()!.TournamentType is TournamentType.Soccer);
+        _otherHeader = _tournamentIsSoccer ? "Deduct" : "BP";
+
+        foreach (var team in Teams)
+        {
+            if (!_previousPoints.ContainsKey(team.TeamCode))
+                _previousPoints[team.TeamCode] = team.Points;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        foreach (var team in Teams)
+            _previousPoints[team.TeamCode] = team.Points;
+    }
+
+    private string GetPointsClass(PoolStandingModel team)
+        => (_previousPoints.TryGetValue(team.TeamCode, out var oldPoints) && (oldPoints != team.Points)) ? POINTS_CHIP_ANIMATED_CSS : POINTS_CHIP_CSS;
+
+    private bool IsAutoQualifier(PoolStandingModel team)
+    {
+        var tournament = CacheSvc.Tournaments.GetCurrent();
+        if (tournament is null || tournament.NumberOfPlayoffAutoQualifiers <= 0)
+            return false;
+
+        return Teams
+            .Take(tournament.NumberOfPlayoffAutoQualifiers)
+            .Contains(team);
+    }
+
+    private Guid? GetTeamOwner(PoolStandingModel team)
+        => CacheSvc.TeamOwners.GetOwnerIdByCode(team.TeamCode);
+}

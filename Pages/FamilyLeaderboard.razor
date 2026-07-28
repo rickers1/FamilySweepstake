@@ -1,0 +1,125 @@
+@* // Ignore Spelling: leaderboard *@
+
+@page "/leaderboard/{TournamentCode}"
+
+@using FamilySweepstake.Components
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
+
+@inject CacheService CacheSvc
+
+<MudText Typo="Typo.h4" Class="mb-4">Leaderboard</MudText>
+
+@foreach (var owner in leaderboard)
+{
+    <MudExpansionPanel>
+        <TitleContent>
+            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceAround">
+                <MudAvatar Size="Size.Large" Color="Color.Transparent">
+                    @GetRankingIcon(ranking)
+                </MudAvatar>
+                <OwnerCard TeamOwner="owner.Owner" ShowOwnerName="true" />
+                <AnimatedScoreChip TeamCode="@owner.Owner.Name" Score="owner.TotalPoints" />
+            </MudStack>
+        </TitleContent>
+        <ChildContent>
+            <MudExpansionPanels>
+                @if (owner?.Teams is not null)
+                {
+                    foreach (var team in owner.Teams)
+                    {
+                        <MudExpansionPanel>
+                            <TitleContent>
+                                <PoolTeamScoreCard Teams="@(new[] { team!.Standing })" ShowWDL ShowPoints />
+                            </TitleContent>
+                            <ChildContent>
+                                @foreach (var fixture in team!.Fixtures)
+                                {
+                                    <FixtureRow Fixture="fixture" ShowMatchDateAndTime />
+                                }
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    }
+                }
+            </MudExpansionPanels>
+        </ChildContent>
+        </MudExpansionPanel>
+}
+
+@code {
+    [Parameter] public string TournamentCode { get; set; } = "TBA";
+
+    private IEnumerable<OwnerLeaderboardEntry> leaderboard = [];
+    private int ranking;
+    private readonly List<string> _rankingIcons = ["🏆", "🥈", "🥉", "☹️"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Select tournament (this reloads TeamsCache automatically if needed)
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+        leaderboard = await BuildLeaderboard();
+    }
+
+    private async Task<IEnumerable<OwnerLeaderboardEntry>> BuildLeaderboard()
+    {
+        var standingsData = await CacheSvc.Service.GetPoolStandingsAsync(CacheSvc.Tournaments.CurrentTournamentId!);
+        IReadOnlyDictionary<string, PoolStandingModel> standings = standingsData.ToDictionary(k => k.TeamCode, v => v, StringComparer.OrdinalIgnoreCase);
+
+        IReadOnlyDictionary<string, TeamModel> teams = CacheSvc.Teams.All;
+
+        IReadOnlyDictionary<string, TeamOwnershipModel> ownerships = CacheSvc.TeamOwners.AllForPools;
+
+        IReadOnlyDictionary<Guid, FamilyMemberModel> members = CacheSvc.FamilyMembers.All;
+
+        List<FixtureModel> fixtures = await CacheSvc.Service.GetFixturesAsync(CacheSvc.Tournaments.CurrentTournamentCode!);
+
+        var fixturesByTeam = fixtures.Where(f => !f.IsPlayoffs)
+            .SelectMany(f => new[]
+            {
+                new { Code = f.HomeCode, Fixture = f },
+                new { Code = f.AwayCode, Fixture = f }
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Code))
+            .GroupBy(x => x.Code!)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => x.Fixture).ToList()
+            );
+
+        return ownerships.Values
+            .Where(o => o.OwnerId is not null)
+            .GroupBy(o => o.OwnerId!.Value)
+            .Select(group =>
+            {
+                var owner = members[group.Key];
+
+                var teams = group
+                    .Select(o =>
+                    {
+                        // standings keyed by team code
+                        if (!standings.TryGetValue(o.TeamCode!, out var standing))
+                            return null;
+
+                        fixturesByTeam.TryGetValue(o.TeamCode!, out var fx);
+
+                        return new TeamLeaderboardEntry(
+                            o.TeamCode!,
+                            standing,
+                            standing.Points,
+                            fx ?? new List<FixtureModel>()
+                        );
+                    })
+                    .Where(t => t is not null)
+                    .ToList();
+
+                var total = teams.Sum(t => t?.PointsAwarded ?? 0);
+
+                return new OwnerLeaderboardEntry(owner, total, teams);
+            })
+            .OrderByDescending(e => e.TotalPoints);
+    }
+
+    private string GetRankingIcon(int rank)
+        => _rankingIcons[Math.Min(ranking++, _rankingIcons.Count - 1)];
+}

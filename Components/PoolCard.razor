@@ -1,0 +1,24 @@
+@using FamilySweepstake.ViewModels
+
+<MudCard Outlined Class="pool-card-enter">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudAvatar Color="Color.Secondary">@Pool.Pool[^1]</MudAvatar>
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5">@Pool.Pool</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+
+    <MudCardContent>
+        <PoolTeamScoreCard Teams="Pool.Teams"
+                           ShowOwner="ShowOwner"
+                           ShowWDL="ShowWDL" />
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public PoolGroupViewModel Pool { get; set; }
+    [Parameter] public bool ShowOwner { get; set; } = true;
+    [Parameter] public bool ShowWDL { get; set; } = true;
+}

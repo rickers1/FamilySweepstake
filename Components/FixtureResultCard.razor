@@ -1,0 +1,51 @@
+@* // Ignore Spelling: color pb px *@
+
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+
+@inject CacheService CacheSvc
+
+@if (Fixture.IsCompleted)
+{
+    <MudStack Row AlignItems="AlignItems.Stretch" Class="pb-2">
+        <MudStack Row Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="flex-grow-1 px-2" Style="@_ownerColoursCss">
+
+            <MudText Typo="Typo.body2" Class="@($"order-{(_isDraw ? 2 : 1)}")">
+                @(_isDraw ? DRAW_EMOJI : WIN_EMOJI)
+            </MudText>
+
+            <MudText Typo="Typo.body2" Class="@($"order-{(_isDraw ? 1 : 2)}")">
+                @(_owner.Name ?? DRAW_TEXT)
+            </MudText>
+
+        </MudStack>
+    </MudStack>
+}
+
+@code {
+    [Parameter, EditorRequired] public FixtureModel Fixture { get; set; }
+
+    private FamilyMemberModel _owner = default!;
+    private string _ownerColoursCss = default!;
+    private bool _isDraw;
+
+    const string WIN_EMOJI = "🙂";
+    const string DRAW_EMOJI = "☹️";
+    const string DRAW_TEXT = "Draw";
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _isDraw = (Fixture.HomeWin == Fixture.AwayWin);
+
+        // if (_isDraw)
+        //     _owner = CacheSvc.FamilyMembers.GetOrDefault(null);
+        // else if (Fixture.HomeScore > Fixture.AwayScore)
+        //     _owner = CacheSvc.FamilyMembers.GetOrDefault(Fixture.HomeOwnerId);
+        // else
+        //     _owner = CacheSvc.FamilyMembers.GetOrDefault(Fixture.AwayOwnerId);
+
+        _ownerColoursCss = $"background-color:{_owner.BackgroundColor}; color:{_owner.ForegroundColor};";
+    }
+}
