@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "=== Running automated git push after publish ==="
 
-# Ensure we're in the repo root (Visual Studio runs publish from the project folder)
+# Ensure we're in the repo root
 $repoRoot = git rev-parse --show-toplevel
 Set-Location $repoRoot
 
@@ -18,14 +18,17 @@ if ([string]::IsNullOrWhiteSpace($changes)) {
     exit 0
 }
 
-# Create a timestamped commit message
+# Commit with timestamp
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $commitMessage = "Automated publish: $timestamp"
 
 Write-Host "Committing changes..."
 git commit -m "$commitMessage"
 
+Write-Host "Pulling latest changes (rebase)..."
+git pull --rebase origin master
+
 Write-Host "Pushing to origin..."
-git push origin HEAD
+git push origin master
 
 Write-Host "=== Automated publish complete ==="
