@@ -14,9 +14,11 @@ git add -A
 $changes = git status --porcelain
 
 if ([string]::IsNullOrWhiteSpace($changes)) {
-    Write-Host "No changes to commit. Skipping commit and push."
-    exit 0
+    Write-Host "No changes to commit. Skip commit and push."
+} else {
+	Write-Host "Changes to commit with Git."
 }
+exit 0
 
 # Commit with timestamp
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -25,8 +27,14 @@ $commitMessage = "Automated publish: $timestamp"
 Write-Host "Committing changes..."
 git commit -m "$commitMessage"
 
-Write-Host "Pulling latest changes (rebase)..."
-git pull --rebase origin master
+# Check if remote is ahead
+$localHash = git rev-parse HEAD
+$remoteHash = git rev-parse origin/master
+
+if ($localHash -ne $remoteHash) {
+    Write-Host "Remote branch is ahead. Skipping push to avoid conflicts."
+    exit 0
+}
 
 Write-Host "Pushing to origin..."
 git push origin master
