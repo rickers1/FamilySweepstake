@@ -5,7 +5,7 @@ namespace FamilySweepstake.Models;
 
 public class FixtureModel
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = default!;
     [property: JsonPropertyName("tournament_id")] public Guid TournamentId { get; set; }
     [property: JsonPropertyName("match_start")] public DateTime MatchStart { get; set; }
     public string? Stage { get; set; }

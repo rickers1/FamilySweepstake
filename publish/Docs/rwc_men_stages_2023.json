@@ -1,0 +1,22 @@
+{
+  "round8": {
+	"name": "Quarter finals",
+    "start": "2023-10-14T15:00Z",
+    "end": "2023-10-20T18:00Z"
+  },
+  "round4": {
+	"name": "Semi finals",
+    "start": "2023-10-20T19:00Z",
+    "end": "2023-10-27T18:00Z"
+  },
+  "bronze_medal": {
+	"name": "Bronze medal match",
+    "start": "2023-10-27T19:00Z",
+    "end": "2023-10-28T18:00Z"
+  },
+  "gold_medal": {
+	"name": "Gold medal match",
+    "start": "2023-10-28T19:00Z",
+    "start": "2023-10-29T19:00Z"
+  }
+}
