@@ -5,12 +5,19 @@
 @using FamilySweepstake.Components
 @using FamilySweepstake.Services
 @using FamilySweepstake.ViewModels
+@using static FamilySweepstake.Models.Constants
 
 @inject CacheService CacheSvc
 
 <MudText Typo="Typo.h4" Class="mb-4">Fixtures</MudText>
 
-@if (isLoading)
+<MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
+<MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+
+@if (_isLoading)
 {
     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
@@ -19,7 +26,7 @@
 }
 else
 {
-    @foreach (var fixtureForDay in fixturesByDate)
+    @foreach (var fixtureForDay in _fixturesByDate)
     {
         <MudPaper Class="pa-4 mb-6" Elevation="2">
             <MudStack Row AlignItems="AlignItems.Center">
@@ -44,19 +51,26 @@ else
 @code {
     [Parameter] public string TournamentCode { get; set; } = "TBA";
 
-    private const string MATCH_DATE_FORMAT = "ddd, d MMM";
-
-    private bool isLoading = true;
-    private IEnumerable<FixtureGroupViewModel> fixturesByDate = [];
+    private bool _isLoading = true;
+    private IEnumerable<FixtureGroupViewModel> _fixturesByDate = [];
 
     protected override async Task OnParametersSetAsync()
     {
-        // Select tournament (this reloads TeamsCache automatically if needed)
+        await base.OnParametersSetAsync();
+
+        //Select tournament (this reloads TeamsCache automatically if needed)
         await CacheSvc.SetTournamentAsync(TournamentCode);
 
+        _fixturesByDate = await BuildFixturesList();
+
+        _isLoading = false;
+    }
+
+    private async Task<IEnumerable<FixtureGroupViewModel>> BuildFixturesList()
+    {
         var fixtures = await CacheSvc.Service.GetFixturesAsync(TournamentCode);
 
-        fixturesByDate = fixtures
+        return fixtures
             .OrderBy(f => f.MatchStart)
             .GroupBy(f => f.MatchStart.Date)
             .OrderBy(g => g.Key)
@@ -73,7 +87,5 @@ else
                     stage
                 );
             });
-
-        isLoading = false;
     }
 }

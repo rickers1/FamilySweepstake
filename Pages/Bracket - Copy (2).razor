@@ -1,0 +1,269 @@
+@page "/bracket/{TournamentCode}"
+
+@using FamilySweepstake.Components
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+
+@inject CacheService CacheSvc
+@inject IJSRuntime JS
+
+<MudText Typo="Typo.h4" Class="mb-4">Playoff Bracket</MudText>
+
+@if (_isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading bracket...</MudText>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="2">
+
+        <!-- ESPN-style round buttons -->
+        <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+            @for (int i = 0; i < _rounds.Count; i++)
+            {
+                var round = i;
+                <MudButton OnClick="@(() => OnRoundSelected(round))"
+                           Disabled="@(round == _activeRound)"
+                           Class="mx-1">
+                    @RoundLabel(_rounds[round])
+                </MudButton>
+            }
+        </MudButtonGroup>
+
+        <!-- Horizontal scrollable bracket -->
+        <MudPaper Style="overflow-x:auto; white-space:nowrap;">
+            <MudStack Row="true" Spacing="4" Class="bracket-scroll">
+
+                @foreach (var round in _visibleRounds)
+                {
+                    <div class="bracket-column">
+                        <MudText Typo="Typo.h6">@RoundLabel(round)</MudText>
+
+                        @foreach (var fixture in GetFixturesForRound(round))
+                        {
+                            <div class="match-wrapper"
+                                 data-next="@GetNextFixtureId(fixture)"
+                                 id="wrap-@GetFixtureId(fixture)">
+                                <div id="@GetFixtureId(fixture)"
+                                     class="bracket-card @( _animate ? "entered" : "" )">
+                                    <BracketNode Fixture="fixture" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- THIS SVG SPANS ALL COLUMNS -->
+                <svg class="connector-lines"></svg>
+
+            </MudStack>
+
+        </MudPaper>
+
+    </MudStack>
+}
+
+<style>
+    .bracket-scroll {
+        display: inline-flex;
+        gap: 32px;
+    }
+
+    .bracket-column {
+        min-width: 240px;
+        position: relative;
+    }
+
+    .match-wrapper {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+    .bracket-card {
+        opacity: 0;
+        margin-top: 8px;
+        transition: opacity 0.25s ease, margin-top 0.25s ease;
+    }
+
+        .bracket-card.entered {
+            opacity: 1;
+            margin-top: 0;
+        }
+
+    .connector-lines {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; /* spans ALL columns */
+        height: 100%; /* spans ALL rows */
+        pointer-events: none;
+    }
+
+    .h-line,
+    .v-line {
+        stroke: #ccc;
+        stroke-width: 2;
+    }
+</style>
+
+@code {
+    [Parameter] public string TournamentCode { get; set; } = "TBA";
+
+    private bool _isLoading = true;
+    private bool _animate = false;
+    private int _activeRound = 0;
+
+    private List<string> _rounds = [];
+    private List<string> _visibleRounds = [];
+    private List<FixtureModel> _fixtures = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+        await BuildBracketAsync();
+        _isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            await JS.InvokeVoidAsync("drawBracketLines");
+    }
+
+    private async Task BuildBracketAsync()
+    {
+        await CacheSvc.SetTournamentAsync(TournamentCode);
+
+        _fixtures = (await CacheSvc.Service.GetFixturesAsync(TournamentCode))
+            .Where(f => f.BracketSlot != null)
+            .ToList();
+
+        BuildBracketDetail();
+
+        _rounds = _fixtures
+            .Select(f => Decode(f.BracketSlot!).Round)
+            .Distinct()
+            .OrderByDescending(r => int.Parse(r[1..]))
+            .ToList();
+
+        UpdateVisibleRounds();
+
+        _animate = true;
+    }
+
+    private void OnRoundSelected(int round)
+    {
+        _activeRound = round;
+        _animate = false;
+        UpdateVisibleRounds();
+        _animate = true;
+    }
+
+    private void UpdateVisibleRounds()
+        => _visibleRounds = _rounds.Skip(_activeRound).ToList();
+
+    private IEnumerable<FixtureModel> GetFixturesForRound(string round)
+        => _fixtures
+            .Where(f => f.BracketSlot!.StartsWith(round))
+            .OrderBy(f => Decode(f.BracketSlot!).Slot);
+
+
+    private void BuildBracketDetail()
+    {
+        var bySlot = _fixtures
+            .Where(f => f.BracketSlot != null)
+            .ToDictionary(f => Decode(f.BracketSlot!), f => f);
+
+        // Example mappings: r8 -> r4, r4 -> r2
+        // r8s1 winner -> r4s1 home, r8s2 winner -> r4s1 away
+        AdvanceWinner(bySlot, "r8", 1, "r4", 1, true);
+        AdvanceWinner(bySlot, "r8", 2, "r4", 1, false);
+        // r8s3 winner -> r4s2 home, r8s4 winner -> r4s2 away
+        AdvanceWinner(bySlot, "r8", 3, "r4", 2, true);
+        AdvanceWinner(bySlot, "r8", 4, "r4", 2, false);
+
+        // r4s1 loser -> r2s1 home (3rd place), r4s2 loser -> r2s1 away
+        AdvanceLoser(bySlot, "r4", 1, "r2", 1, true);
+        AdvanceLoser(bySlot, "r4", 2, "r2", 1, false);
+
+        // r4s1 winner -> r2s2 home (final), r4s2 winner -> r2s2 away
+        AdvanceWinner(bySlot, "r4", 1, "r2", 2, true);
+        AdvanceWinner(bySlot, "r4", 2, "r2", 2, false);
+    }
+
+    private void AdvanceWinner(Dictionary<BracketSlot, FixtureModel> fixtures, string fromRound, int fromSlot, string toRound, int toSlot, bool isHome)
+    {
+        var fromKey = new BracketSlot(fromRound, fromSlot);
+        if (!fixtures.TryGetValue(fromKey, out var from)) return;
+
+        var winnerCode = from.HomeWin ? from.HomeCode : from.AwayCode;
+
+        var toKey = new BracketSlot(toRound, toSlot);
+        if (!fixtures.TryGetValue(toKey, out var to)) return;
+
+        if (isHome)
+            to.HomeCode = winnerCode;
+        else
+            to.AwayCode = winnerCode;
+    }
+
+    private void AdvanceLoser(Dictionary<BracketSlot, FixtureModel> fixtures, string fromRound, int fromSlot, string toRound, int toSlot, bool isHome)
+    {
+        var fromKey = new BracketSlot(fromRound, fromSlot);
+        if (!fixtures.TryGetValue(fromKey, out var from)) return;
+
+        var loserCode = from.HomeWin ? from.AwayCode : from.HomeCode;
+
+        var toKey = new BracketSlot(toRound, toSlot);
+        if (!fixtures.TryGetValue(toKey, out var to)) return;
+
+        if (isHome)
+            to.HomeCode = loserCode;
+        else
+            to.AwayCode = loserCode;
+    }
+
+    private static BracketSlot Decode(string slot)
+    {
+        var r = slot[..slot.IndexOf('s')];
+        var s = int.Parse(slot[(slot.IndexOf('s') + 1)..]);
+        return new BracketSlot(r, s);
+    }
+
+    private string RoundLabel(string round) => round switch
+    {
+        "r32" => "Round of 32",
+        "r16" => "Round of 16",
+        "r8" => "Quarterfinals",
+        "r4" => "Semifinals",
+        "r2" => "Finals",
+        _ => round
+    };
+
+    private string GetFixtureId(FixtureModel f)
+        => $"match-{f.BracketSlot}";
+
+    private string? GetNextFixtureId(FixtureModel f)
+    {
+        var slot = Decode(f.BracketSlot!);
+
+        var nextRound = slot.Round switch
+        {
+            "r32" => "r16",
+            "r16" => "r8",
+            "r8" => "r4",
+            "r4" => "r2",
+            _ => null
+        };
+
+        if (nextRound is null) return null;
+
+        var nextSlot = (int)Math.Ceiling(slot.Slot / 2.0);
+        return $"match-{nextRound}s{nextSlot}";
+    }
+
+    private record BracketSlot(string Round, int Slot);
+}

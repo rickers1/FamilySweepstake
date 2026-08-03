@@ -3,7 +3,6 @@
 @page "/leaderboard/{TournamentCode}"
 
 @using FamilySweepstake.Components
-@using FamilySweepstake.Models
 @using FamilySweepstake.Services
 @using FamilySweepstake.ViewModels
 
@@ -11,70 +10,95 @@
 
 <MudText Typo="Typo.h4" Class="mb-4">Leaderboard</MudText>
 
-@foreach (var owner in leaderboard)
+@if (_isLoading)
 {
-    <MudExpansionPanel>
-        <TitleContent>
-            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceAround">
-                <MudAvatar Size="Size.Large" Color="Color.Transparent">
-                    @GetRankingIcon(ranking)
-                </MudAvatar>
-                <OwnerCard TeamOwner="owner.Owner" ShowOwnerName="true" />
-                <AnimatedScoreChip TeamCode="@owner.Owner.Name" Score="owner.TotalPoints" />
-            </MudStack>
-        </TitleContent>
-        <ChildContent>
-            <MudExpansionPanels>
-                @if (owner?.Teams is not null)
-                {
-                    foreach (var team in owner.Teams)
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading fixtures...</MudText>
+    </MudStack>
+}
+else
+{
+    @foreach (var owner in leaderboard)
+    {
+        <MudExpansionPanel>
+            <TitleContent>
+                <MudGrid Spacing="1">
+                    <MudItem xs="3" sm="2" md="1" Class="@owner.OwnerColoursCss">
+                        <MudAvatar Size="Size.Large" Color="Color.Transparent">
+                            @GetRankingIcon(owner.Ranking)
+                        </MudAvatar>
+                    </MudItem>
+
+                    <MudItem xs="6" sm="8" md="3">
+                        <OwnerCard TeamOwner="owner.Owner" ShowOwnerName />
+                    </MudItem>
+
+                    <MudItem xs="3" sm="2" md="1">
+                        <ScoreChip TeamCode="@owner.Owner.Name" Score="owner.TotalPoints" />
+                    </MudItem>
+                </MudGrid>
+            </TitleContent>
+
+            <ChildContent>
+                <MudExpansionPanels>
+                    @if (owner.Teams is not null)
                     {
-                        <MudExpansionPanel>
-                            <TitleContent>
-                                <PoolTeamScoreCard Teams="@(new[] { team!.Standing })" ShowWDL ShowPoints />
-                            </TitleContent>
-                            <ChildContent>
-                                @foreach (var fixture in team!.Fixtures)
-                                {
-                                    <FixtureRow Fixture="fixture" ShowMatchDateAndTime />
-                                }
-                            </ChildContent>
-                        </MudExpansionPanel>
+                        foreach (var team in owner.Teams)
+                        {
+                            <MudExpansionPanel>
+                                <TitleContent>
+                                    <PoolTeamScoreCard  Teams="@(new[] { team!.Standing })" ShowWDL ShowOwner="false" />
+                                </TitleContent>
+
+                                <ChildContent>
+                                    <MudStack Class="pt-2">
+                                        @foreach (var fixture in team!.Fixtures)
+                                        {
+                                            <FixtureRow Fixture="fixture" ShowMatchDateAndTime="true" />
+                                        }
+                                    </MudStack>
+                                </ChildContent>
+                            </MudExpansionPanel>
+                        }
                     }
-                }
-            </MudExpansionPanels>
-        </ChildContent>
+                </MudExpansionPanels>
+            </ChildContent>
         </MudExpansionPanel>
+    }
 }
 
 @code {
     [Parameter] public string TournamentCode { get; set; } = "TBA";
 
+    private bool _isLoading = true;
     private IEnumerable<OwnerLeaderboardEntry> leaderboard = [];
-    private int ranking;
     private readonly List<string> _rankingIcons = ["🏆", "🥈", "🥉", "☹️"];
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        // Select tournament (this reloads TeamsCache automatically if needed)
+        await base.OnParametersSetAsync();
+
+        //Select tournament (this reloads TeamsCache automatically if needed)
         await CacheSvc.SetTournamentAsync(TournamentCode);
+
         leaderboard = await BuildLeaderboard();
+
+        _isLoading = false;
     }
 
     private async Task<IEnumerable<OwnerLeaderboardEntry>> BuildLeaderboard()
     {
         var standingsData = await CacheSvc.Service.GetPoolStandingsAsync(CacheSvc.Tournaments.CurrentTournamentId!);
-        IReadOnlyDictionary<string, PoolStandingModel> standings = standingsData.ToDictionary(k => k.TeamCode, v => v, StringComparer.OrdinalIgnoreCase);
+        var standings = standingsData.ToDictionary(k => k.TeamCode, v => v, StringComparer.OrdinalIgnoreCase);
 
-        IReadOnlyDictionary<string, TeamModel> teams = CacheSvc.Teams.All;
+        var ownerships = CacheSvc.TeamOwners.AllForPools;
+        var members = CacheSvc.FamilyMembers.All;
 
-        IReadOnlyDictionary<string, TeamOwnershipModel> ownerships = CacheSvc.TeamOwners.AllForPools;
+        var fixtures = await CacheSvc.Service.GetFixturesAsync(CacheSvc.Tournaments.CurrentTournamentCode!);
 
-        IReadOnlyDictionary<Guid, FamilyMemberModel> members = CacheSvc.FamilyMembers.All;
-
-        List<FixtureModel> fixtures = await CacheSvc.Service.GetFixturesAsync(CacheSvc.Tournaments.CurrentTournamentCode!);
-
-        var fixturesByTeam = fixtures.Where(f => !f.IsPlayoffs)
+        var fixturesByTeam = fixtures
+            .Where(f => !f.IsPlayoffs)
             .SelectMany(f => new[]
             {
                 new { Code = f.HomeCode, Fixture = f },
@@ -87,7 +111,7 @@
                 g => g.Select(x => x.Fixture).ToList()
             );
 
-        return ownerships.Values
+        var ordered = ownerships.Values
             .Where(o => o.OwnerId is not null)
             .GroupBy(o => o.OwnerId!.Value)
             .Select(group =>
@@ -97,29 +121,27 @@
                 var teams = group
                     .Select(o =>
                     {
-                        // standings keyed by team code
                         if (!standings.TryGetValue(o.TeamCode!, out var standing))
                             return null;
 
                         fixturesByTeam.TryGetValue(o.TeamCode!, out var fx);
 
-                        return new TeamLeaderboardEntry(
-                            o.TeamCode!,
-                            standing,
-                            standing.Points,
-                            fx ?? new List<FixtureModel>()
-                        );
+                        return new TeamLeaderboardEntry(o.TeamCode!, standing, standing.Points, fx ?? []);
                     })
                     .Where(t => t is not null)
                     .ToList();
 
-                var total = teams.Sum(t => t?.PointsAwarded ?? 0);
+                var total = teams.Sum(t => t!.PointsAwarded);
 
-                return new OwnerLeaderboardEntry(owner, total, teams);
+                return new { Owner = owner, Total = total, Teams = teams };
             })
-            .OrderByDescending(e => e.TotalPoints);
+            .OrderByDescending(e => e.Total);
+
+        return ordered
+            .Select((e, index) => new OwnerLeaderboardEntry(e.Owner, index + 1, e.Total, e.Teams))
+            .ToList();
     }
 
     private string GetRankingIcon(int rank)
-        => _rankingIcons[Math.Min(ranking++, _rankingIcons.Count - 1)];
+        => _rankingIcons[Math.Min(rank - 1, _rankingIcons.Count - 1)];
 }

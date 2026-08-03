@@ -3,23 +3,26 @@ using System.Text.Json.Serialization;
 
 namespace FamilySweepstake.Models;
 
-public record FixtureModel(
-    string Id,
-    [property: JsonPropertyName("tournament_id")] Guid TournamentId,
-    [property: JsonPropertyName("match_start")] DateTime MatchStart,
-    string? Stage,
+public class FixtureModel
+{
+    public string Id { get; set; }
+    [property: JsonPropertyName("tournament_id")] public Guid TournamentId { get; set; }
+    [property: JsonPropertyName("match_start")] public DateTime MatchStart { get; set; }
+    public string? Stage { get; set; }
 
-    [property: JsonPropertyName("away_code")] string? AwayCode,
-    [property: JsonPropertyName("away_score")] int? AwayScore,
-    [property: JsonPropertyName("away_pens")] int? AwayPens,
-    [property: JsonPropertyName("away_win")] bool AwayWin,
+    [property: JsonPropertyName("away_code")] public string? AwayCode { get; set; }
+    [property: JsonPropertyName("away_score")] public int? AwayScore { get; set; }
+    [property: JsonPropertyName("away_pens")] public int? AwayPens { get; set; }
+    [property: JsonPropertyName("away_win")] public bool AwayWin { get; set; }
 
-    [property: JsonPropertyName("home_code")] string? HomeCode,
-    [property: JsonPropertyName("home_score")] int? HomeScore,
-    [property: JsonPropertyName("home_pens")] int? HomePens,
-    [property: JsonPropertyName("home_win")] bool HomeWin,
+    [property: JsonPropertyName("home_code")] public string? HomeCode { get; set; }
+    [property: JsonPropertyName("home_score")] public int? HomeScore { get; set; }
+    [property: JsonPropertyName("home_pens")] public int? HomePens { get; set; }
+    [property: JsonPropertyName("home_win")] public bool HomeWin { get; set; }
 
-    [property: JsonPropertyName("is_playoffs")] bool IsPlayoffs,
-    [property: JsonPropertyName("is_completed")] bool IsCompleted,
-    [property: JsonPropertyName("match_clock")] string? MatchClock
-);
+    [property: JsonPropertyName("is_playoffs")] public bool IsPlayoffs { get; set; }
+    [property: JsonPropertyName("bracket_slot")] public string? BracketSlot { get; set; }
+
+    [property: JsonPropertyName("is_completed")] public bool IsCompleted { get; set; }
+    [property: JsonPropertyName("match_clock")] public string? MatchClock { get; set; }
+}

@@ -1,158 +1,307 @@
 @page "/bracket/{TournamentCode}"
 
 @using FamilySweepstake.Components
+@using FamilySweepstake.Models
 @using FamilySweepstake.Services
-@using FamilySweepstake.ViewModels
-@using static FamilySweepstake.Models.Constants
+@using FamilySweepstake.Extensions
 
 @inject CacheService CacheSvc
+@inject IJSRuntime JS
 
 <MudText Typo="Typo.h4" Class="mb-4">Playoff Bracket</MudText>
 
-@if (isLoading)
+<MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
+<MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+
+@if (_isLoading)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading bracket...</MudText>
+    </MudStack>
 }
 else
 {
-    <MudHidden Breakpoint="Breakpoint.SmAndDown">
-        <MudGrid Class="bracket-grid" Gutter="3">
-            @foreach (var round in rounds)
-            {
-                <MudItem xs="12" md="3">
-                    <MudPaper Elevation="1" Class="pa-2">
-                        <MudText Typo="Typo.h6" Class="round-title">@round.Stage</MudText>
+    <div class="bracket-container">
+        @for (int i = 0; i < _groupedRounds.Count; i++)
+        {
+            var roundIndex = i;
+            var group = _groupedRounds[i];
+            var roundSize = group.Key;
 
-                        <MudStack Spacing="2">
-                            @foreach (var match in round.Matches)
-                            {
-                                <MudPaper Elevation="2" Class="pa-2 bracket-match">
-                                    <MudStack Spacing="1">
-                                        <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="SpaceBetween">
-                                            <TeamCard TeamCode="@match.HomeTeam"
-                                                      OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.HomeTeam, true)"
-                                                      ShowOwner="true" />
-                                            <AnimatedScoreChip TeamCode="@match.Fixture.HomeCode"
-                                                               Score="@match.Fixture.HomeScore"
-                                                               ScorePens="@match.Fixture.HomePens"
-                                                               Winner="@match.HomeWin" />
-                                        </MudStack>
+            if (roundIndex < _activeRound)
+                continue;
 
-                                        <MudDivider />
+            <div class="bracket-round">
+                <div class="d-flex justify-center mb-4">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               OnClick="@(() => OnRoundSelected(roundIndex))">
+                        @RoundLabel(roundSize)
+                    </MudButton>
+                </div>
 
-                                        <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="SpaceBetween">
-                                            <TeamCard TeamCode="@match.AwayTeam"
-                                                      OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.AwayTeam, true)"
-                                                      ShowOwner="true" />
-                                            <AnimatedScoreChip TeamCode="@match.Fixture.AwayCode"
-                                                               Score="@match.Fixture.AwayScore"
-                                                               ScorePens="@match.Fixture.AwayPens"
-                                                               Winner="@match.AwayWin" />
-                                        </MudStack>
-
-                                        <MudText Typo="Typo.caption" Align="Align.Center">
-                                            @match.Fixture.MatchStart.ToString("ddd h:mm tt")
-                                        </MudText>
-                                    </MudStack>
-                                </MudPaper>
-                            }
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid>
-    </MudHidden>
-    <MudHidden Breakpoint="Breakpoint.MdAndUp">
-        <MudStack Spacing="4">
-            @foreach (var round in rounds)
-            {
-                <MudPaper Elevation="1" Class="pa-2">
-                    <MudText Typo="Typo.h6" Class="round-title-mobile">@round.Stage</MudText>
-
-                    <MudStack Spacing="2">
-                        @foreach (var match in round.Matches)
-                        {
-                            <MudPaper Elevation="2" Class="pa-2 bracket-match-mobile">
-                                <MudStack Spacing="1">
-                                    <TeamCard TeamCode="@match.HomeTeam"
-                                              OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.HomeTeam, true)"
-                                              ShowOwner="true" />
-                                    <AnimatedScoreChip TeamCode="@match.Fixture.HomeCode"
-                                                       Score="@match.Fixture.HomeScore"
-                                                       ScorePens="@match.Fixture.HomePens"
-                                                       Winner="@match.HomeWin" />
-
-                                    <MudDivider />
-
-                                    <TeamCard TeamCode="@match.AwayTeam"
-                                              OwnerId="@CacheSvc.TeamOwners.GetOwnerIdByCode(match.AwayTeam, true)"
-                                              ShowOwner="true" />
-                                    <AnimatedScoreChip TeamCode="@match.Fixture.AwayCode"
-                                                       Score="@match.Fixture.AwayScore"
-                                                       ScorePens="@match.Fixture.AwayPens"
-                                                       Winner="@match.AwayWin" />
-                                    <MudText Typo="Typo.caption">
-                                        @match.Fixture.MatchStart.ToString("ddd h:mm tt")
-                                    </MudText>
-                                </MudStack>
-                            </MudPaper>
-                        }
-                    </MudStack>
-                </MudPaper>
-            }
-        </MudStack>
-    </MudHidden>
-
+                @foreach (var match in group)
+                {
+                    <div class="bracket-match-wrapper" id="@GetFixtureId(match)">
+                        <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;">
+                            <div class="d-flex justify-space-between" style="@GetTeamStyle(match.HomeWin)">
+                                <BracketNode Fixture="match"/>
+                            </div>
+                            @* <MudDivider Class="my-2" />
+                            <div class="d-flex justify-space-between" style="@GetTeamStyle(!match.HomeWin)">
+                                <BracketNode Fixture="match" />
+                            </div> *@
+                        </MudPaper>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 }
+
+<style>
+    .bracket-container {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 24px;
+        gap: 40px;
+    }
+
+    .bracket-round {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        min-width: 220px;
+        position: relative;
+    }
+
+    .bracket-match-wrapper {
+        position: relative;
+        margin: 16px 0;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Draw the connecting lines */
+    /* This is a comment */
+    .bracket-round:not(:last-child) .bracket-match-wrapper:nth-child(odd)::after {
+        content: "";
+        position: absolute;
+        right: -20px;
+        top: 50%;
+        width: 20px;
+        height: 50%;
+        border-top: 2px solid var(--mud-palette-lines-default);
+        border-right: 2px solid var(--mud-palette-lines-default);
+        border-top-right-radius: 4px;
+    }
+
+    .bracket-round:not(:last-child) .bracket-match-wrapper:nth-child(even)::after {
+        content: "";
+        position: absolute;
+        right: -20px;
+        bottom: 50%;
+        width: 20px;
+        height: 50%;
+        border-bottom: 2px solid var(--mud-palette-lines-default);
+        border-right: 2px solid var(--mud-palette-lines-default);
+        border-bottom-right-radius: 4px;
+    }
+
+    /* Connect the converging elbows to the next match */
+    .bracket-round:not(:first-child) .bracket-match-wrapper::before {
+        content: "";
+        position: absolute;
+        left: -20px;
+        top: 50%;
+        width: 20px;
+        border-top: 2px solid var(--mud-palette-lines-default);
+    }
+</style>
 
 @code {
     [Parameter] public string TournamentCode { get; set; } = "TBA";
 
-    private bool isLoading = true;
-    private List<BracketRound> rounds = [];
+    private bool _isLoading = true;
+    private bool _animate = false;
+    private int _activeRound = 0;
 
+    private List<FixtureModel> _fixtures = [];
+
+    // Structures flat fixtures into an ordered hierarchy for rendering
+    private List<IGrouping<int, FixtureModel>> _groupedRounds = [];
+    private List<IGrouping<int, FixtureModel>> _visibleRounds = [];
+
+    /// <summary>
+    /// Initializes the component parameters and loads the bracket data.
+    /// </summary>
     protected override async Task OnParametersSetAsync()
     {
-        await LoadBracketAsync();
-        isLoading = false;
-    }
-
-    protected async Task LoadBracketAsync()
-    {
         await CacheSvc.SetTournamentAsync(TournamentCode);
-
-        var fixtures = await CacheSvc.Service.GetFixturesAsync(TournamentCode);
-
-        var playoffFixtures = fixtures.Where(f => f.IsPlayoffs).ToList();
-
-        rounds = playoffFixtures
-            .GroupBy(f => f.Stage)
-            .OrderBy(g => StageOrder(g.Key))
-            .Select(g => new BracketRound(
-                g.Key!,
-                g.Select(f => new BracketMatch(
-                    g.Key!,
-                    f,
-                    f.HomeCode!,
-                    f.AwayCode!,
-                    f.HomeWin,
-                    f.AwayWin
-                )).ToList()
-            ))
-            .ToList();
+        await BuildBracketAsync();
+        _isLoading = false;
     }
 
-    private int StageOrder(string? stage)
+    /// <summary>
+    /// Builds the tournament bracket by fetching fixtures, advancing winners, and grouping rounds.
+    /// </summary>
+    private async Task BuildBracketAsync()
     {
-        return stage switch
-        {
-            "Round of 32" => 1,
-            "Round of 16" => 2,
-            "Quarterfinal" => 3,
-            "Semifinal" => 4,
-            "Final" => 5,
-            _ => 99
-        };
+        _fixtures = (await CacheSvc.Service.GetFixturesAsync(TournamentCode))
+            .Where(f => !string.IsNullOrEmpty(f.BracketSlot))
+            .ToList();
+
+        BuildBracketDetail();
+
+        _groupedRounds = _fixtures
+            .GroupBy(f => Decode(f.BracketSlot!).RoundSize)
+            .OrderByDescending(g => g.Key)
+            .ToList();
+
+        UpdateVisibleRounds();
+
+        _animate = true;
     }
 
+    /// <summary>
+    /// Updates the currently active round and handles animation state changes.
+    /// </summary>
+    /// <param name="roundIndex">The index of the round to make active.</param>
+    private void OnRoundSelected(int roundIndex)
+    {
+        _activeRound = roundIndex;
+        _animate = false;
+        UpdateVisibleRounds();
+        _animate = true;
+    }
+
+    /// <summary>
+    /// Updates the collection of visible rounds by skipping prior rounds.
+    /// </summary>
+    private void UpdateVisibleRounds()
+    {
+        _visibleRounds = _groupedRounds.Skip(_activeRound).ToList();
+    }
+
+    /// <summary>
+    /// Builds the internal fixture details by simulating the advancement of winners and losers.
+    /// </summary>
+    private void BuildBracketDetail()
+    {
+        var bySlot = _fixtures.ToDictionary(f => Decode(f.BracketSlot!), f => f);
+
+        // Example mappings: Round of 8 to Semifinals, Semifinals to Finals
+        AdvanceWinner(bySlot, 8, 1, 4, 1, true);
+        AdvanceWinner(bySlot, 8, 2, 4, 1, false);
+
+        AdvanceWinner(bySlot, 8, 3, 4, 2, true);
+        AdvanceWinner(bySlot, 8, 4, 4, 2, false);
+
+        AdvanceLoser(bySlot, 4, 1, 2, 1, true);
+        AdvanceLoser(bySlot, 4, 2, 2, 1, false);
+
+        AdvanceWinner(bySlot, 4, 1, 2, 2, true);
+        AdvanceWinner(bySlot, 4, 2, 2, 2, false);
+    }
+
+    /// <summary>
+    /// Advances the winner of a given fixture to the designated slot in a future round.
+    /// </summary>
+    private void AdvanceWinner(Dictionary<BracketSlot, FixtureModel> fixtures, int fromRoundSize, int fromSlot, int toRoundSize, int toSlot, bool isHome)
+    {
+        var fromKey = new BracketSlot(fromRoundSize, fromSlot);
+        if (!fixtures.TryGetValue(fromKey, out var from)) return;
+
+        var winnerCode = from.HomeWin ? from.HomeCode : from.AwayCode;
+
+        var toKey = new BracketSlot(toRoundSize, toSlot);
+        if (!fixtures.TryGetValue(toKey, out var to)) return;
+
+        if (isHome)
+            to.HomeCode = winnerCode;
+        else
+            to.AwayCode = winnerCode;
+    }
+
+    /// <summary>
+    /// Advances the loser of a given fixture to the designated slot in a future round.
+    /// </summary>
+    private void AdvanceLoser(Dictionary<BracketSlot, FixtureModel> fixtures, int fromRoundSize, int fromSlot, int toRoundSize, int toSlot, bool isHome)
+    {
+        var fromKey = new BracketSlot(fromRoundSize, fromSlot);
+        if (!fixtures.TryGetValue(fromKey, out var from)) return;
+
+        var loserCode = from.HomeWin ? from.AwayCode : from.HomeCode;
+
+        var toKey = new BracketSlot(toRoundSize, toSlot);
+        if (!fixtures.TryGetValue(toKey, out var to)) return;
+
+        if (isHome)
+            to.HomeCode = loserCode;
+        else
+            to.AwayCode = loserCode;
+    }
+
+    /// <summary>
+    /// Decodes a string-based bracket slot into a structured object.
+    /// </summary>
+    private static BracketSlot Decode(string slot)
+    {
+        var sIndex = slot.IndexOf('s');
+        var r = int.Parse(slot[1..sIndex]);
+        var s = int.Parse(slot[(sIndex + 1)..]);
+
+        return new BracketSlot(r, s);
+    }
+
+    /// <summary>
+    /// Gets the CSS styling for a team based on whether they won the match.
+    /// </summary>
+    private string GetTeamStyle(bool isWinner)
+    {
+        if (isWinner)
+            return "font-weight: 700;";
+        else
+            return "font-weight: 400; color: var(--mud-palette-text-secondary);";
+    }
+
+    /// <summary>
+    /// Gets the human-readable label for a specific tournament round.
+    /// </summary>
+    private string RoundLabel(int roundSize) => roundSize switch
+    {
+        32 => "Round of 32",
+        16 => "Round of 16",
+        8 => "Quarterfinals",
+        4 => "Semifinals",
+        2 => "Finals",
+        _ => $"Round of {roundSize}"
+    };
+
+    /// <summary>
+    /// Generates a unique HTML element identifier for a given fixture.
+    /// </summary>
+    private string GetFixtureId(FixtureModel f)
+        => $"match-{f.BracketSlot}";
+
+    /// <summary>
+    /// Calculates the identifier of the next chronological fixture for the winner of this fixture.
+    /// </summary>
+    private string? GetNextFixtureId(FixtureModel f)
+    {
+        var slot = Decode(f.BracketSlot!);
+
+        int nextRoundSize = slot.RoundSize / 2;
+        if (nextRoundSize < 2) return null;
+
+        var nextSlot = (int)Math.Ceiling(slot.Slot / 2.0);
+        return $"match-r{nextRoundSize}s{nextSlot}";
+    }
+
+    private record BracketSlot(int RoundSize, int Slot);
 }

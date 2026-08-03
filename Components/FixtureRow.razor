@@ -6,44 +6,31 @@
 
 @inject CacheService CacheSvc
 
-<MudGrid Class="py-2 align-center">
-    <!-- Time -->
-    <MudItem xs="4" sm="1">
-        <MudText Typo="Typo.body2">@_matchStart</MudText>
-    </MudItem>
+<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+    <MudGrid Spacing="0" Class="align-center text-center">
 
-    <!-- Home Team -->
-    <MudItem xs="8" sm="3">
-        <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" />
+        <MudItem xs="12" sm="12" md="1">
+            <MudText Typo="_matchStartTypoSize">@_matchStart</MudText>
+        </MudItem>
 
-    </MudItem>
+        <MudItem xs="10" sm="5" md="4">
+            <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" />
+        </MudItem>
 
-    <!-- Home Score -->
-    <MudItem xs="3" sm="1">
-        <AnimatedScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin"/>
-    </MudItem>
+        <MudItem xs="2" sm="1" md="1">
+            <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
+        </MudItem>
 
-    <!-- VS -->
-    <MudItem xs="2" sm="1" Class="text-center">
-        <MudText Typo="Typo.body2">vs</MudText>
-    </MudItem>
+        <MudItem xs="2" sm="1" md="1" Class="@_scoreOrderCss">
+            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" RightAlign="_wideLayout" />
+        </MudItem>
 
-    <!-- Away Score -->
-    <MudItem xs="3" sm="1">
-        <AnimatedScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" />
-    </MudItem>
+        <MudItem xs="10" sm="5" md="4" Class="@_teamOrderCss">
+            <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
+        </MudItem>
 
-    <!-- Away Team -->
-    <MudItem xs="8" sm="3">
-        <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
-    </MudItem>
-
-    <!-- Result -->
-    @* <MudItem xs="8" sm="2">
-        <FixtureResultCard Fixture="Fixture" />
-    </MudItem> *@
-
-</MudGrid>
+    </MudGrid>
+</MudBreakpointProvider>
 
 @code {
     [Parameter, EditorRequired] public FixtureModel Fixture { get; set; }
@@ -51,7 +38,11 @@
 
     private Guid? _homeTeamOwnerId;
     private Guid? _awayTeamOwnerId;
-    string _matchStart = string.Empty;
+    private string _matchStart = string.Empty;
+    private Typo _matchStartTypoSize = Typo.body2;
+    private string _teamOrderCss = string.Empty;
+    private string _scoreOrderCss = string.Empty;
+    private bool _wideLayout = true;
 
     protected override void OnParametersSet()
     {
@@ -63,4 +54,16 @@
         _awayTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.AwayCode, Fixture.IsPlayoffs);
     }
 
+
+    private void OnBreakpointChanged(Breakpoint bp)
+    {
+        _wideLayout = (bp >= Breakpoint.Sm);
+
+        _matchStartTypoSize = !_wideLayout ? Typo.caption : Typo.body2;
+        _scoreOrderCss = GetOrderClass(1, 2);
+        _teamOrderCss = GetOrderClass(2, 1);
+    }
+
+    private string GetOrderClass(int leftOrder, int rightOrder, string? otherClasses = null)
+        => $"order-{(_wideLayout ? leftOrder : rightOrder)} {otherClasses}".Trim();
 }

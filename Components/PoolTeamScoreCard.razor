@@ -4,38 +4,47 @@
 
 @inject CacheService CacheSvc
 
-<MudSimpleTable Dense Bordered Striped Class="pool-table">
-    <thead>
-        <tr>
-            <th>Team</th>
+<MudGrid Spacing="0" Class="align-center text-center">
+    <MudItem xs="10" sm="8" md="9">
+    </MudItem>
+
+    <MudHidden Breakpoint="Breakpoint.Xs">
+        @if (ShowWDL)
+        {
+            <MudItem xs="0" sm="2" md="1">
+                W-D-L
+            </MudItem>
+            <MudItem xs="0" sm="1" md="1">
+                <MudText Typo="Typo.body2">
+                    @_otherHeader
+                </MudText>
+            </MudItem>
+        }
+    </MudHidden>
+
+    @if (ShowPoints)
+    {
+        <MudItem xs="2" sm="1" md="1">
+            Points
+        </MudItem>
+    }
+</MudGrid>
+
+@foreach (var team in Teams)
+{
+    <MudGrid Spacing="0" Class="align-center text-center">
+        <MudItem xs="10" sm="8" md="9">
+            <TeamCard TeamCode="@team.TeamCode" ShowOwner="ShowOwner" OwnerId="GetTeamOwner(team)" />
+        </MudItem>
+
+        <MudHidden Breakpoint="Breakpoint.Xs">
             @if (ShowWDL)
             {
-                <th>W‑D‑L</th>
-            }
-
-            <th>@_otherHeader</th>
-
-            @if (ShowPoints)
-            {
-                <th>Points</th>
-            }
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var team in Teams)
-        {
-            <tr class="team-row @(IsAutoQualifier(team) ? "playoff-team" : "")">
-                <td class="team-cell">
-                    <TeamCard TeamCode="@team.TeamCode" ShowOwner="ShowOwner" OwnerId="GetTeamOwner(team)" />
-                </td>
-
-                @if (ShowWDL)
-                {
-                    <td>
-                        @team.Wins‑@team.Draws‑@team.Losses
-                    </td>
-                    <td>
+                <MudItem xs="0" sm="2" md="1">
+                    <MudText Typo="Typo.body2">@team.Wins‑@team.Draws‑@team.Losses</MudText>
+                </MudItem>
+                <MudItem xs="0" sm="1" md="1">
+                    <MudText Typo="Typo.body2">
                         @if (_tournamentIsSoccer)
                         {
                             @team.FifaPointDeductions
@@ -44,19 +53,19 @@
                         {
                             @team.RwcBonusPoints
                         }
-                    </td>
-                }
+                    </MudText>
+                </MudItem>
+            }
+        </MudHidden>
 
-                @if (ShowPoints)
-                {
-                    <td>
-                        <AnimatedScoreChip Score="@team.Points" TeamCode="@team.TeamCode" />
-                    </td>
-                }
-            </tr>
+        @if (ShowPoints)
+        {
+            <MudItem xs="2" sm="1" md="1">
+                <ScoreChip Score="@team.Points" TeamCode="@team.TeamCode" />
+            </MudItem>
         }
-    </tbody>
-</MudSimpleTable>
+    </MudGrid>
+}
 
 @code {
     [Parameter, EditorRequired] public IEnumerable<PoolStandingModel> Teams { get; set; } = [];
@@ -64,33 +73,18 @@
     [Parameter] public bool ShowWDL { get; set; } = false;
     [Parameter] public bool ShowPoints { get; set; } = true;
 
+    private const string SOCCER_OTHER_HEADER = "Deduct";
+    private const string RUGBY_OTHER_HEADER = "Bonus";
     private List<PoolStandingViewModel> _teamsWithOwners = [];
     private readonly Dictionary<string, int> _previousPoints = new();
     private bool _tournamentIsSoccer;
-    private string _otherHeader = "BP";
-    private const string POINTS_CHIP_CSS = "points-chip";
-    private const string POINTS_CHIP_ANIMATED_CSS = POINTS_CHIP_CSS + " updated";
+    private string _otherHeader = SOCCER_OTHER_HEADER;
 
     protected override void OnParametersSet()
     {
         _tournamentIsSoccer = (CacheSvc.Tournaments.GetCurrent()!.TournamentType is TournamentType.Soccer);
-        _otherHeader = _tournamentIsSoccer ? "Deduct" : "BP";
-
-        foreach (var team in Teams)
-        {
-            if (!_previousPoints.ContainsKey(team.TeamCode))
-                _previousPoints[team.TeamCode] = team.Points;
-        }
+        _otherHeader = _tournamentIsSoccer ? SOCCER_OTHER_HEADER : RUGBY_OTHER_HEADER;
     }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        foreach (var team in Teams)
-            _previousPoints[team.TeamCode] = team.Points;
-    }
-
-    private string GetPointsClass(PoolStandingModel team)
-        => (_previousPoints.TryGetValue(team.TeamCode, out var oldPoints) && (oldPoints != team.Points)) ? POINTS_CHIP_ANIMATED_CSS : POINTS_CHIP_CSS;
 
     private bool IsAutoQualifier(PoolStandingModel team)
     {

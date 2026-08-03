@@ -7,7 +7,7 @@
 
 <MudStack Row AlignItems="AlignItems.Stretch" Class="pb-2">
     <MudBadge Visible="@(_team?.WorldRanking is not null)" Content="@_team!.WorldRanking" Overlap="true" Class="@_flagOrderCss" Color="Color.Primary">
-        <MudImage Src="@_team?.FlagUrl" Alt="@_team?.Code" Width="45" Class="rounded-sm" Fluid Elevation="1" />
+        <MudImage Src="@_team?.FlagUrl" Alt="@_team?.Code" Width="45" Class="rounded-sm" Elevation="1" />
     </MudBadge>
 
     @if (ShowOwner)

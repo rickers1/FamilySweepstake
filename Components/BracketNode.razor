@@ -1,48 +1,57 @@
+@* // Ignore Spelling: center py tt *@
+
 @using FamilySweepstake.Models
+@using FamilySweepstake.Services
+@using static FamilySweepstake.Models.Constants
 
-<div class="card border-secondary shadow-sm" style="font-size: 0.9rem;">
-    <div class="list-group list-group-flush">
+@inject CacheService CacheSvc
 
-        <!-- Home Team -->
-        <div class="list-group-item d-flex justify-content-between align-items-center p-2 @(HomeWon ? "bg-light fw-bold" : "")">
-            <span class="text-truncate" style="max-width: 150px;">
-                @GetTeamName(Match.HomeCode)
-            </span>
-            <span class="badge @(HomeWon ? "bg-primary" : "bg-secondary")">
-                @(Match.IsCompleted ? Match.HomeTotal.ToString() : "-")
-            </span>
-        </div>
+<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+    <MudGrid Spacing="0" Class="align-center text-center">
 
-        <!-- Away Team -->
-        <div class="list-group-item d-flex justify-content-between align-items-center p-2 @(AwayWon ? "bg-light fw-bold" : "")">
-            <span class="text-truncate" style="max-width: 150px;">
-                @GetTeamName(Match.AwayCode)
-            </span>
-            <span class="badge @(AwayWon ? "bg-primary" : "bg-secondary")">
-                @(Match.IsCompleted ? Match.AwayTotal.ToString() : "-")
-            </span>
-        </div>
+        <MudItem xs="10">
+            <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" />
+        </MudItem>
 
-    </div>
+        <MudItem xs="2">
+            <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
+        </MudItem>
 
-    @if (!string.IsNullOrEmpty(Match.MatchClock) && !Match.IsCompleted)
-    {
-        <div class="card-footer p-1 text-center bg-danger text-white small fw-bold blink">
-            @Match.MatchClock
-        </div>
-    }
-</div>
+        <MudItem xs="12">
+            <MudText Typo="_matchStartTypoSize">@_matchStart</MudText>
+        </MudItem>
+
+        <MudItem xs="10">
+            <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
+        </MudItem>
+
+        <MudItem xs="2">
+            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
+        </MudItem>
+
+    </MudGrid>
+</MudBreakpointProvider>
 
 @code {
-    [Parameter]
-    public Fixture Match { get; set; } = null!;
+    [Parameter, EditorRequired] public FixtureModel Fixture { get; set; }
+    [Parameter] public bool ShowMatchDateAndTime { get; set; }
 
-    [Parameter]
-    public List<Team> Teams { get; set; } = new();
+    private Guid? _homeTeamOwnerId;
+    private Guid? _awayTeamOwnerId;
+    private string _matchStart = string.Empty;
+    private Typo _matchStartTypoSize = Typo.body2;
 
-    private bool HomeWon => Match.IsCompleted && Match.HomeTotal > Match.AwayTotal;
-    private bool AwayWon => Match.IsCompleted && Match.AwayTotal > Match.HomeTotal;
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
 
-    private string GetTeamName(string code) =>
-        Teams.FirstOrDefault(t => t.Code == code)?.Name ?? code ?? "TBD";
+        _matchStart = Fixture.MatchStart.ToString(ShowMatchDateAndTime ? MATCH_DATE_TIME_FORMAT : MATCH_TIME_FORMAT);
+
+        _homeTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.HomeCode, Fixture.IsPlayoffs);
+        _awayTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.AwayCode, Fixture.IsPlayoffs);
+    }
+
+
+    private void OnBreakpointChanged(Breakpoint bp)
+        => _matchStartTypoSize = (bp >= Breakpoint.Sm) ? Typo.caption : Typo.body2;
 }

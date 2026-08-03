@@ -17,8 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Components\BracketNode.razor" />
     <Content Remove="Components\FamilyLeaderBoard.razor" />
+    <Content Remove="Pages\Bracket - Copy %282%29.razor" />
+    <Content Remove="Pages\Bracket - Copy.razor" />
     <Content Remove="Pages\Rankings.razor" />
   </ItemGroup>
 
