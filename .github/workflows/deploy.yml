@@ -25,12 +25,20 @@ jobs:
         run: dotnet workload install wasm-tools
 
       - name: Publish Blazor
+<<<<<<< HEAD
         run: dotnet publish -c Release -o publish -p:GHPages=true
+=======
+        run: dotnet publish -c Release -o publish/wwwroot/497a4751-6099-4d0b-9b64-3bbf41797716 -p:GHPages=true
+>>>>>>> e2c6ae1 (v1.0)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+<<<<<<< HEAD
           path: publish/wwwroot
+=======
+          path: publish/wwwroot/497a4751-6099-4d0b-9b64-3bbf41797716
+>>>>>>> e2c6ae1 (v1.0)
 
   deploy:
     needs: build
