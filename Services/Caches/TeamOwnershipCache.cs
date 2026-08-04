@@ -10,7 +10,7 @@ public class TeamOwnershipCache
     private Dictionary<string, TeamOwnershipModel> _teamOwnersByCode = new(StringComparer.OrdinalIgnoreCase);
     private Guid _tournamentId = default!;
 
-    public async Task InitializeAsync(ITournamentService service, Guid tournamentId)
+    public async Task InitializeAsync(ISupabaseService service, Guid tournamentId)
     {
         _tournamentId = tournamentId;
         var teams = await service.GetTeamOwnershipsAsync(tournamentId);

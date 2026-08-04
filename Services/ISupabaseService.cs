@@ -2,7 +2,7 @@ using FamilySweepstake.Models;
 
 namespace FamilySweepstake.Services;
 
-public interface ITournamentService : IDisposable
+public interface ISupabaseService : IDisposable
 {
     Task<List<FamilyMemberModel>> GetFamilyMembersAsync();
     Task<List<TournamentModel>> GetTournamentsAsync();

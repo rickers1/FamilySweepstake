@@ -9,7 +9,7 @@ public class TeamCache
     private Dictionary<string, TeamModel> _teamsByCode = new(StringComparer.OrdinalIgnoreCase);
     private Guid _tournamentId = default!;
 
-    public async Task InitializeAsync(ITournamentService service, Guid tournamentId)
+    public async Task InitializeAsync(ISupabaseService service, Guid tournamentId)
     {
         _tournamentId = tournamentId;
         var teams = await service.GetTeamsAsync(tournamentId);

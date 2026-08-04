@@ -6,25 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
         <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
-
-        <!-- Optional but recommended: prevent SDK from re-ingesting publish/ folder -->
-        <DefaultItemExcludes>$(DefaultItemExcludes);publish/**</DefaultItemExcludes>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Compile Remove="Models\EspnModels.cs" />
-        <Compile Remove="Models\MatchData.cs" />
-        <Compile Remove="Services\FamilyMemberCache.cs" />
-        <Compile Remove="Services\Services.cs" />
-        <Compile Remove="Services\TournamentCache.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Remove="Components\FamilyLeaderBoard.razor" />
-        <Content Remove="Pages\Bracket - Copy %282%29.razor" />
-        <Content Remove="Pages\Bracket - Copy.razor" />
-        <Content Remove="Pages\Rankings.razor" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
@@ -38,7 +20,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Properties\PublishProfiles\" />
+        <!-- Keep the Docs folder in Visual Studio, but never copy it to the build output -->
+        <Content Update="Docs\**" CopyToOutputDirectory="Never" />
+        <None Update="Docs\**" CopyToOutputDirectory="Never" />
     </ItemGroup>
-
 </Project>

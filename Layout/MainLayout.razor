@@ -1,11 +1,108 @@
+@* // Ignore Spelling: leaderboard *@
+
+@using FamilySweepstake.Services
+
+@implements IDisposable
 @inherits LayoutComponentBase
+@inject CacheService CacheSvc
+@inject NavigationManager NavManager
 
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
-<MudSwitch @bind-Value="_isDarkMode" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode" />
+@if (!_initialized)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading data...</MudText>
+    </MudStack>
+}
+else
+{
+    <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
 
-@Body
+    <MudLayout>
+        <MudAppBar Elevation="1" Color="Color.Primary">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+
+            <MudText Typo="Typo.h6" Class="ml-3">FamilySweepstake</MudText>
+
+            <MudSpacer />
+
+            <MudSwitch @bind-Value="_isDarkMode" Color="Color.Secondary" T="bool" Label="Dark Mode" />
+        </MudAppBar>
+
+        <MudDrawer @bind-Open="@_drawerOpen"
+                   Elevation="2"
+                   Variant="@DrawerVariant.Responsive"
+                   Breakpoint="@Breakpoint.Md">
+            <MudNavMenu>
+                @if (!string.IsNullOrEmpty(CacheSvc.Tournaments.CurrentTournamentCode))
+                {
+                    <MudNavLink Href="@($"/leaderboard/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.Leaderboard">Leaderboard</MudNavLink>
+                    <MudNavLink Href="@($"/bracket/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.AccountTree">Bracket</MudNavLink>
+                    <MudNavLink Href="@($"/pools/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.ViewModule">Pools</MudNavLink>
+                    <MudNavLink Href="@($"/fixtures/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.CalendarMonth">Fixtures</MudNavLink>
+                }
+
+                <MudNavGroup Title="Change Tournament" Icon="@Icons.Material.Filled.SwapHoriz">
+                    @foreach (var tournament in CacheSvc.Tournaments.All.Values)
+                    {
+                        <MudNavLink Href="@GetTournamentHref(tournament.Code)">@tournament.Code</MudNavLink>
+                    }
+                </MudNavGroup>
+            </MudNavMenu>
+        </MudDrawer>
+
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+}
 
 @code {
+    private bool _initialized = false;
+    private bool _drawerOpen = true;
     private MudTheme _theme = new();
     private bool _isDarkMode = true;
+
+    /// <summary>
+    /// Initialises the centralised cache service on application load and subscribes to navigation events.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        NavManager.LocationChanged += OnLocationChanged;
+        await CacheSvc.InitializeAsync();
+        _initialized = true;
+    }
+
+    /// <summary>
+    /// Cleans up event subscriptions when the layout is destroyed.
+    /// </summary>
+    public void Dispose()
+        => NavManager.LocationChanged -= OnLocationChanged;
+
+    /// <summary>
+    /// Forces the layout to re-render to update dynamic links when the route changes.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="e">The location changed event arguments.</param>
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => StateHasChanged();
+
+    /// <summary>
+    /// Toggles the visibility state of the navigation drawer.
+    /// </summary>
+    private void ToggleDrawer()
+        => _drawerOpen = !_drawerOpen;
+
+    /// <summary>
+    /// Generates a contextual URL for a target tournament based on the current page section.
+    /// </summary>
+    /// <param name="targetTournamentCode">The code of the tournament to navigate to.</param>
+    /// <returns>A formatted URL string pointing to the same section for the new tournament.</returns>
+    private string GetTournamentHref(string targetTournamentCode)
+    {
+        var segments = NavManager.ToBaseRelativePath(NavManager.Uri).Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return $"/{((segments.Length != 0) ? segments[0] : "leaderboard")}/{targetTournamentCode}";
+    }
 }

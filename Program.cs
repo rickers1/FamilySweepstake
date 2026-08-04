@@ -1,5 +1,4 @@
 // Ignore Spelling: apikey authorization initialize supabase
-
 using FamilySweepstake;
 using FamilySweepstake.Services;
 using Microsoft.AspNetCore.Components.Web;
@@ -25,35 +24,21 @@ builder.Services.AddMudServices(cfg =>
     cfg.SnackbarConfiguration.SnackbarVariant = MudBlazor.Variant.Filled;
 });
 
-builder.Services.AddScoped(sp => new HttpClient
-{
-    BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
-});
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-// Register caches (CHANGED: all scoped)
-builder.Services.AddScoped<TournamentCache>();
-builder.Services.AddScoped<FamilyMemberCache>();
-builder.Services.AddScoped<TeamCache>();
-builder.Services.AddScoped<TeamOwnershipCache>();
+// Register cache
 builder.Services.AddScoped<CacheService>();
 
-// Register Supabase tournament service (scoped)
-builder.Services.AddScoped<ITournamentService>(sp =>
+// Register Supabase service
+builder.Services.AddScoped<ISupabaseService>(sp =>
 {
     var http = new HttpClient { BaseAddress = new Uri($"{supabaseUrl}/rest/v1/") };
     http.DefaultRequestHeaders.Add("apikey", supabaseKey);
     http.DefaultRequestHeaders.Add("Authorization", $"Bearer {supabaseKey}");
 
-    return new SupabaseTournamentService(
-        http,
-        sp.GetRequiredService<TournamentCache>()
-    );
+    return new SupabaseService(http, sp);
 });
 
 var app = builder.Build();
-
-// Initialize cache service (valid in WASM because scoped == singleton)
-var cache = app.Services.GetRequiredService<CacheService>();
-await cache.InitializeAsync();
 
 await app.RunAsync();

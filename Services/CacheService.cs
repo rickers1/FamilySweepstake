@@ -2,9 +2,9 @@
 
 namespace FamilySweepstake.Services;
 
-public class CacheService(ITournamentService service)
+public class CacheService(ISupabaseService service)
 {
-    public ITournamentService Service => service;
+    public ISupabaseService Service => service;
     public TournamentCache Tournaments { get; } = new();
     public FamilyMemberCache FamilyMembers { get; } = new();
     public TeamOwnershipCache TeamOwners { get; } = new();
@@ -14,10 +14,18 @@ public class CacheService(ITournamentService service)
     {
         await Tournaments.InitializeAsync(service);
         await FamilyMembers.InitializeAsync(service);
+        await SetTournamentAsync();
     }
 
-    public async Task SetTournamentAsync(string? code)
+    public async Task SetTournamentAsync(string? code = null)
     {
+        // Find the most recent enabled tournament by start date
+        code ??= Tournaments.All.Values
+                .Where(t => t.IsEnabled)
+                .OrderByDescending(t => t.StartDate)
+                .FirstOrDefault()
+                ?.Code;
+
         if (code is null) return;
 
         if (!string.Equals(Tournaments.CurrentTournamentCode, code, StringComparison.OrdinalIgnoreCase))

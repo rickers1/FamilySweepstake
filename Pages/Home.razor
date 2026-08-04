@@ -1,7 +1,23 @@
-﻿@page "/"
+@* // Ignore Spelling: leaderboard *@
 
-<PageTitle>Home</PageTitle>
+@page "/"
 
-<h1>Hello, world!</h1>
+@using FamilySweepstake.Services
 
-Welcome to your new app.
+@inject NavigationManager NavigationManager
+@inject CacheService CacheSvc
+
+<MudText Typo="Typo.h5">Loading tournament...</MudText>
+
+@code {
+    /// <summary>
+    /// Redirects the user to the leaderboard of the current active tournament on load.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        var current = CacheSvc.Tournaments.CurrentTournamentCode;
+        if (!string.IsNullOrEmpty(current))
+            NavigationManager.NavigateTo($"/leaderboard/{current}");
+    }
+
+}
