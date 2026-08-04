@@ -102,8 +102,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Publish Blazor
-        # Replace YourProjectName.csproj with your actual Blazor project name
-        run: dotnet publish YourProjectName.csproj -c Release -o publish
+        run: dotnet publish FamilySweepstake.csproj -c Release -o publish
 
       # ✅ 2. Setup Node 24 to match the new GitHub environment
       - name: Install Node
