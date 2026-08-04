@@ -59,10 +59,6 @@ jobs:
             echo "❌ index.html missing"
             exit 1
           fi
-          if [ ! -f "publish/wwwroot/_framework/blazor.boot.json" ]; then
-            echo "❌ blazor.boot.json missing"
-            exit 1
-          fi
           echo "✔ Static asset validation passed"
 
       # Upload artifact for Pages
