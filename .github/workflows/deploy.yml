@@ -52,6 +52,19 @@ jobs:
       - name: Publish Blazor
         run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true
 
+      # ✅ Validate published output
+      - name: Validate published output
+        run: |
+          if [ ! -f "publish/wwwroot/index.html" ]; then
+            echo "❌ index.html missing"
+            exit 1
+          fi
+          if [ ! -f "publish/wwwroot/_framework/blazor.boot.json" ]; then
+            echo "❌ blazor.boot.json missing"
+            exit 1
+          fi
+          echo "✔ Static asset validation passed"
+
       # Upload artifact for Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -74,19 +87,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Run unit tests
-        run: dotnet test --no-build --verbosity normal
-
-      - name: Validate published output
-        run: |
-          if [ ! -f "publish/wwwroot/index.html" ]; then
-            echo "❌ index.html missing"
-            exit 1
-          fi
-          if [ ! -f "publish/wwwroot/_framework/blazor.boot.json" ]; then
-            echo "❌ blazor.boot.json missing"
-            exit 1
-          fi
-          echo "✔ Static asset validation passed"
+        run: dotnet test --verbosity normal
 
   # ---------------------------------------------------------
   # 3. LIGHTHOUSE PERFORMANCE CHECK
