@@ -5,6 +5,7 @@
 @using FamilySweepstake.Components
 @using FamilySweepstake.Services
 @using FamilySweepstake.ViewModels
+@using static FamilySweepstake.Models.Constants
 
 @inject CacheService CacheSvc
 
@@ -69,11 +70,18 @@ else
 }
 
 @code {
-    [Parameter] public string TournamentCode { get; set; } = "TBA";
+    [Parameter] public string TournamentCode { get; set; } = DEFAULT_CODE;
 
     private bool _isLoading = true;
     private IEnumerable<OwnerLeaderboardEntry> leaderboard = [];
-    private readonly List<string> _rankingIcons = ["🏆", "🥈", "🥉", "☹️"];
+    private List<string> _rankingIcons = [];
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _rankingIcons = [..RANKING_ICONS.Split(',')];
+
+    }
 
     protected override async Task OnParametersSetAsync()
     {

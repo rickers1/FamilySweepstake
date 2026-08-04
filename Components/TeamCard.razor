@@ -1,11 +1,16 @@
 @* // Ignore Spelling: color eee pb px sm *@
 
+@using FamilySweepstake.Extensions
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
 
 @inject CacheService CacheSvc
 
 <MudStack Row AlignItems="AlignItems.Stretch" Class="pb-2">
+    @if(!string.IsNullOrWhiteSpace(ShowMedalIcon))
+    {
+        <MudIcon Size="Size.Large">@ShowMedalIcon</MudIcon>
+    }
     <MudBadge Visible="@(_team?.WorldRanking is not null)" Content="@_team!.WorldRanking" Overlap="true" Class="@_flagOrderCss" Color="Color.Primary">
         <MudImage Src="@_team?.FlagUrl" Alt="@_team?.Code" Width="45" Class="rounded-sm" Elevation="1" />
     </MudBadge>
@@ -26,6 +31,7 @@
 
 @code {
     [Parameter, EditorRequired] public string TeamCode { get; set; }
+    [Parameter] public string? ShowMedalIcon { get; set; }
     [Parameter] public Guid? OwnerId { get; set; }
     [Parameter] public bool ShowOwner { get; set; }
     [Parameter] public bool RightAlign { get; set; }
@@ -47,10 +53,7 @@
             _teamOwner = CacheSvc.FamilyMembers.GetOrDefault(OwnerId);
             _ownerColoursCss = $"background-color:{_teamOwner.BackgroundColor}; color:{_teamOwner.ForegroundColor};";
         }
-        _flagOrderCss = GetOrderClass(1, 2);
-        _nameOrderCss = GetOrderClass(2, 1, "flex-grow-1 px-2");
+        _flagOrderCss = RightAlign.GetOrderClass(1, 2);
+        _nameOrderCss = RightAlign.GetOrderClass(2, 1, "flex-grow-1 px-2");
     }
-
-    private string GetOrderClass(int leftOrder, int rightOrder, string? otherClasses = null)
-        => $"order-{(RightAlign ? rightOrder : leftOrder)} {otherClasses}".Trim();
 }

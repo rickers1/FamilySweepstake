@@ -1,12 +1,13 @@
+@* // Ignore Spelling: center centering mx *@
+
 @page "/bracket/{TournamentCode}"
 
 @using FamilySweepstake.Components
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
-@using FamilySweepstake.Extensions
+@using static FamilySweepstake.Models.Constants
 
 @inject CacheService CacheSvc
-@inject IJSRuntime JS
 
 <MudText Typo="Typo.h4" Class="mb-4">Playoff Bracket</MudText>
 
@@ -25,38 +26,81 @@
 }
 else
 {
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+        @for (int i = 0; i < _groupedRounds.Count; i++)
+        {
+            var roundIdx = i; // Need `roundIdx` as `i` is maxed out after rendering
+            <MudButton OnClick="@(() => OnRoundSelected(roundIdx))" Disabled="@(roundIdx == _activeRound)" Class="mx-1">
+                @RoundLabel(roundIdx)
+            </MudButton>
+        }
+    </MudButtonGroup>
+
     <div class="bracket-container">
         @for (int i = 0; i < _groupedRounds.Count; i++)
         {
-            var roundIndex = i;
+            var roundIdx = i;
             var group = _groupedRounds[i];
             var roundSize = group.Key;
 
-            if (roundIndex < _activeRound)
+            if (roundIdx < _activeRound)
                 continue;
 
             <div class="bracket-round">
-                <div class="d-flex justify-center mb-4">
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Primary"
-                               OnClick="@(() => OnRoundSelected(roundIndex))">
-                        @RoundLabel(roundSize)
-                    </MudButton>
-                </div>
-
-                @foreach (var match in group)
+                @if (roundSize == 2)
                 {
-                    <div class="bracket-match-wrapper" id="@GetFixtureId(match)">
-                        <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;">
-                            <div class="d-flex justify-space-between" style="@GetTeamStyle(match.HomeWin)">
-                                <BracketNode Fixture="match"/>
-                            </div>
-                            @* <MudDivider Class="my-2" />
-                            <div class="d-flex justify-space-between" style="@GetTeamStyle(!match.HomeWin)">
-                                <BracketNode Fixture="match" />
-                            </div> *@
-                        </MudPaper>
+                    // Medal Round: Center the Gold match and hang the Bronze match below it.
+                    var goldMatch = group.FirstOrDefault(m => Decode(m.BracketSlot!).Slot == 2);
+                    var bronzeMatch = group.FirstOrDefault(m => Decode(m.BracketSlot!).Slot == 1);
+
+                    <div class="bracket-match-wrapper gold-match">
+                        <div style="position: relative; width: 100%;">
+
+                            @if (goldMatch is not null)
+                            {
+                                <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;" id="@GetFixtureId(goldMatch)">
+                                    <div class="d-flex justify-center mb-2">
+                                        <MudText Typo="Typo.caption"><b>🏆 CHAMPIONSHIP</b></MudText>
+                                    </div>
+                                    <MudDivider Class="mb-2" />
+                                    <div class="d-flex justify-space-between">
+                                        <BracketNode Fixture="goldMatch" MedalIcons="GoldMedalIcons" />
+                                    </div>
+                                </MudPaper>
+                            }
+
+                            @if (bronzeMatch is not null)
+                            {
+                                <!-- Position absolute takes the bronze match out of the flow so it doesn't affect centering -->
+                                <div style="position: absolute; top: calc(100% + 24px); width: 100%;" id="@GetFixtureId(bronzeMatch)">
+                                    <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;">
+                                        <div class="d-flex justify-center mb-2">
+                                            <MudText Typo="Typo.caption"><b>🥉 3RD PLACE PLAYOFF</b></MudText>
+                                        </div>
+                                        <MudDivider Class="mb-2" />
+                                        <div class="d-flex justify-space-between">
+                                            <BracketNode Fixture="bronzeMatch" MedalIcons="BronzeMedalIcons" />
+                                        </div>
+                                    </MudPaper>
+                                </div>
+                            }
+
+                        </div>
                     </div>
+                }
+                else
+                {
+                    // Standard Match Output
+                    @foreach (var match in group)
+                    {
+                        <div class="bracket-match-wrapper" id="@GetFixtureId(match)">
+                            <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;">
+                                <div class="d-flex justify-space-between">
+                                    <BracketNode Fixture="match" />
+                                </div>
+                            </MudPaper>
+                        </div>
+                    }
                 }
             </div>
         }
@@ -70,21 +114,23 @@ else
         overflow-x: auto;
         padding: 24px;
         gap: 40px;
+        align-items: stretch; /* Ensures all rounds share the exact same height */
     }
 
     .bracket-round {
         display: flex;
         flex-direction: column;
-        justify-content: space-around;
+        justify-content: center;
         min-width: 220px;
         position: relative;
     }
 
     .bracket-match-wrapper {
         position: relative;
-        margin: 16px 0;
+        flex: 1; /* Makes wrappers stretch to touch each other for continuous vertical lines */
         display: flex;
         align-items: center;
+        padding: 8px 0;
     }
 
     /* Draw the connecting lines */
@@ -125,7 +171,7 @@ else
 </style>
 
 @code {
-    [Parameter] public string TournamentCode { get; set; } = "TBA";
+    [Parameter] public string TournamentCode { get; set; } = DEFAULT_CODE;
 
     private bool _isLoading = true;
     private bool _animate = false;
@@ -136,6 +182,18 @@ else
     // Structures flat fixtures into an ordered hierarchy for rendering
     private List<IGrouping<int, FixtureModel>> _groupedRounds = [];
     private List<IGrouping<int, FixtureModel>> _visibleRounds = [];
+    private List<string> _medalIcons = [];
+    private List<string> GoldMedalIcons => [.. _medalIcons.Take(2)];
+    private List<string> BronzeMedalIcons => [.. _medalIcons.Skip(2).Take(2)];
+
+    override protected void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _medalIcons = RANKING_ICONS.Split(',').ToList();
+        while (_medalIcons.Count() < 4)
+            _medalIcons.Add(CONFUSED_EMOJI);
+    }
 
     /// <summary>
     /// Initialises the component parameters and loads the bracket data.
@@ -152,13 +210,12 @@ else
     /// </summary>
     private async Task BuildBracketAsync()
     {
-        _fixtures = (await CacheSvc.Service.GetFixturesAsync(TournamentCode))
-            .Where(f => !string.IsNullOrEmpty(f.BracketSlot))
-            .ToList();
+        _fixtures = await CacheSvc.Service.GetBracketFixturesAsync(TournamentCode);
 
         BuildBracketDetail();
 
         _groupedRounds = _fixtures
+            .OrderBy(f => Decode(f.BracketSlot!).Slot) // Sort by slot (1, 2, 3...) first
             .GroupBy(f => Decode(f.BracketSlot!).RoundSize)
             .OrderByDescending(g => g.Key)
             .ToList();
@@ -171,10 +228,10 @@ else
     /// <summary>
     /// Updates the currently active round and handles animation state changes.
     /// </summary>
-    /// <param name="roundIndex">The index of the round to make active.</param>
-    private void OnRoundSelected(int roundIndex)
+    /// <param name="roundIdx">The index of the round to make active.</param>
+    private void OnRoundSelected(int roundIdx)
     {
-        _activeRound = roundIndex;
+        _activeRound = roundIdx;
         _animate = false;
         UpdateVisibleRounds();
         _animate = true;
@@ -184,9 +241,7 @@ else
     /// Updates the collection of visible rounds by skipping prior rounds.
     /// </summary>
     private void UpdateVisibleRounds()
-    {
-        _visibleRounds = _groupedRounds.Skip(_activeRound).ToList();
-    }
+        => _visibleRounds = _groupedRounds.Skip(_activeRound).ToList();
 
     /// <summary>
     /// Builds the internal fixture details by simulating the advancement of winners and losers.
@@ -260,27 +315,16 @@ else
     }
 
     /// <summary>
-    /// Gets the CSS styling for a team based on whether they won the match.
-    /// </summary>
-    private string GetTeamStyle(bool isWinner)
-    {
-        if (isWinner)
-            return "font-weight: 700;";
-        else
-            return "font-weight: 400; color: var(--mud-palette-text-secondary);";
-    }
-
-    /// <summary>
     /// Gets the human-readable label for a specific tournament round.
     /// </summary>
-    private string RoundLabel(int roundSize) => roundSize switch
+    private string RoundLabel(int round) => round switch
     {
-        32 => "Round of 32",
-        16 => "Round of 16",
-        8 => "Quarterfinals",
-        4 => "Semifinals",
-        2 => "Finals",
-        _ => $"Round of {roundSize}"
+        0 => "Round of 32",
+        1 => "Round of 16",
+        2 => "Quarterfinals",
+        3 => "Semifinals",
+        4 => "Finals",
+        _ => $"Round {round}"
     };
 
     /// <summary>

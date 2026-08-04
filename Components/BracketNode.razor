@@ -1,5 +1,6 @@
 @* // Ignore Spelling: center py tt *@
 
+@using FamilySweepstake.Extensions
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
 @using static FamilySweepstake.Models.Constants
@@ -7,26 +8,28 @@
 @inject CacheService CacheSvc
 
 <MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+
     <MudGrid Spacing="0" Class="align-center text-center">
 
-        <MudItem xs="10">
-            <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" />
+        <MudItem xs="10" Class="@_homeTeamOrderCss">
+            <TeamCard TeamCode="@Fixture.HomeCode" ShowOwner OwnerId="_homeTeamOwnerId" ShowMedalIcon="@GetMedal(isWinner: Fixture.HomeWin)" />
         </MudItem>
 
-        <MudItem xs="2">
+        <MudItem xs="2" Class="@_homeScoreOrderCss">
             <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
         </MudItem>
 
         <MudItem xs="12">
+            [@Fixture.BracketSlot]
             <MudText Typo="_matchStartTypoSize">@_matchStart</MudText>
         </MudItem>
 
-        <MudItem xs="10">
-            <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
+        <MudItem xs="10" Class="@_awayTeamOrderCss">
+            <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" ShowMedalIcon="@GetMedal(isWinner: Fixture.AwayWin)" />
         </MudItem>
 
-        <MudItem xs="2">
-            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
+        <MudItem xs="2" Class="@_awayScoreOrderCss">
+            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@(Fixture.AwayWin == Fixture.AwayWin)" />
         </MudItem>
 
     </MudGrid>
@@ -35,23 +38,39 @@
 @code {
     [Parameter, EditorRequired] public FixtureModel Fixture { get; set; }
     [Parameter] public bool ShowMatchDateAndTime { get; set; }
+    [Parameter] public List<string>? MedalIcons { get; set; }
 
     private Guid? _homeTeamOwnerId;
     private Guid? _awayTeamOwnerId;
     private string _matchStart = string.Empty;
     private Typo _matchStartTypoSize = Typo.body2;
 
+    private string _homeTeamOrderCss = string.Empty;
+    private string _awayTeamOrderCss = string.Empty;
+    private string _homeScoreOrderCss = string.Empty;
+    private string _awayScoreOrderCss = string.Empty;
+
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
 
-        _matchStart = Fixture.MatchStart.ToString(ShowMatchDateAndTime ? MATCH_DATE_TIME_FORMAT : MATCH_TIME_FORMAT);
+        _matchStart = Fixture.MatchStart.ToString(MATCH_DATE_TIME_FORMAT);
 
         _homeTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.HomeCode, Fixture.IsPlayoffs);
         _awayTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.AwayCode, Fixture.IsPlayoffs);
-    }
 
+        // Medal match? Then winner first. (i.e. If Away team won then swap)
+        var swapOrder = (MedalIcons is not null && Fixture.AwayWin);
+
+        _homeTeamOrderCss = swapOrder.GetOrderClass(1, 3);
+        _homeScoreOrderCss = swapOrder.GetOrderClass(2, 4);
+        _awayTeamOrderCss = swapOrder.GetOrderClass(3, 1);
+        _awayScoreOrderCss = swapOrder.GetOrderClass(4, 2);
+    }
 
     private void OnBreakpointChanged(Breakpoint bp)
         => _matchStartTypoSize = (bp >= Breakpoint.Sm) ? Typo.caption : Typo.body2;
+
+    private string? GetMedal(bool isWinner)
+        => MedalIcons?.Count() > 1 ? MedalIcons[isWinner ? 0 : 1] : null;
 }

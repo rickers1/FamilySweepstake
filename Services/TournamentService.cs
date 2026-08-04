@@ -41,11 +41,17 @@ public class SupabaseTournamentService : ITournamentService
     public async Task<List<TeamModel>> GetTeamsAsync(Guid tournamentId)
         => await _http.GetFromJsonAsync<List<TeamModel>>($"teams?tournament_id=eq.{tournamentId}&select=*&order=world_ranking.asc") ?? [];
 
+    public Task<List<FixtureModel>> GetBracketFixturesAsync(string tournamentCode)
+        => GetBracketFixturesAsync(_tournamentCache.GetIdByCode(tournamentCode));
+
+    public async Task<List<FixtureModel>> GetBracketFixturesAsync(Guid tournamentId)
+        => await _http.GetFromJsonAsync<List<FixtureModel>>($"fixtures?tournament_id=eq.{tournamentId}&bracket_slot=not.is.null&select=*&order=match_start.asc") ?? [];
+
     public Task<List<FixtureModel>> GetFixturesAsync(string tournamentCode)
         => GetFixturesAsync(_tournamentCache.GetIdByCode(tournamentCode));
 
     public async Task<List<FixtureModel>> GetFixturesAsync(Guid tournamentId)
-        => await _http.GetFromJsonAsync<List<FixtureModel>>( $"fixtures?tournament_id=eq.{tournamentId}&select=*&order=match_start.asc" ) ?? [];
+        => await _http.GetFromJsonAsync<List<FixtureModel>>($"fixtures?tournament_id=eq.{tournamentId}&select=*&order=match_start.asc") ?? [];
 
     public Task<List<PoolStandingModel>> GetPoolStandingsAsync(string tournamentCode)
         => GetPoolStandingsAsync(_tournamentCache.GetIdByCode(tournamentCode));

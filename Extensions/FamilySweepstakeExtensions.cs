@@ -9,4 +9,7 @@ public static class FamilySweepstakeExtensions
 
     public static bool IsPlayoffsKey(this string? key)
         => key?.Contains(PLAYOFFS_KEY_SUFFIX)?? false;
+
+    public static string GetOrderClass(this bool reverse, int leftOrder, int rightOrder, string? otherClasses = null)
+        => $"order-{(reverse ? rightOrder : leftOrder)} {otherClasses}".Trim();
 }

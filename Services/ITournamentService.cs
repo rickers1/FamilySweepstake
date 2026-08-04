@@ -9,6 +9,8 @@ public interface ITournamentService : IDisposable
     TournamentModel? GetTournament(string tournamentCode);
     Task<List<TeamModel>> GetTeamsAsync(string tournamentCode);
     Task<List<TeamModel>> GetTeamsAsync(Guid tournamentId);
+    Task<List<FixtureModel>> GetBracketFixturesAsync(string tournamentCode);
+    Task<List<FixtureModel>> GetBracketFixturesAsync(Guid tournamentId);
     Task<List<FixtureModel>> GetFixturesAsync(string tournamentCode);
     Task<List<FixtureModel>> GetFixturesAsync(Guid tournamentId);
     Task<List<PoolStandingModel>> GetPoolStandingsAsync(string tournamentCode);

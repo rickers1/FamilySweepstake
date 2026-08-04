@@ -11,10 +11,26 @@ permissions:
   id-token: write
 
 jobs:
+  # ---------------------------------------------------------
+  # 1. BUILD JOB
+  # ---------------------------------------------------------
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ⚡ Cache NuGet + WASM workload
+      - name: Cache .NET packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ~/.dotnet/tools
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -24,27 +40,116 @@ jobs:
       - name: Install WebAssembly Tools
         run: dotnet workload install wasm-tools
 
-      - name: Publish Blazor
-<<<<<<< HEAD
-        run: dotnet publish -c Release -o publish -p:GHPages=true
-=======
-        run: dotnet publish -c Release -o publish/wwwroot/497a4751-6099-4d0b-9b64-3bbf41797716 -p:GHPages=true
->>>>>>> e2c6ae1 (v1.0)
+      # 🏷️ Version stamping
+      - name: Generate version stamp
+        run: |
+          echo "window.appVersion = {" > wwwroot/version.js
+          echo "  build: \"$(date -u '+%Y-%m-%d %H:%M:%S')\"," >> wwwroot/version.js
+          echo "  commit: \"${GITHUB_SHA}\"" >> wwwroot/version.js
+          echo "};" >> wwwroot/version.js
 
+      # 📦 Publish Blazor WASM
+      - name: Publish Blazor
+        run: dotnet publish -c Release -o publish
+
+      # 🏗️ Cache busting for GitHub Pages CDN
+      - name: Add cache-busting version to blazor.boot.json
+        run: |
+          VERSION=$(date -u '+%Y%m%d%H%M%S')
+          jq --arg v "$VERSION" '
+            .resources.js |= with_entries(.value |= (. + "?v=" + $v)) |
+            .resources.css |= with_entries(.value |= (. + "?v=" + $v)) |
+            .resources.wasm |= with_entries(.value |= (. + "?v=" + $v))
+          ' publish/wwwroot/_framework/blazor.boot.json > publish/wwwroot/_framework/blazor.boot.tmp.json
+          mv publish/wwwroot/_framework/blazor.boot.tmp.json publish/wwwroot/_framework/blazor.boot.json
+
+      # Upload artifact for Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-<<<<<<< HEAD
           path: publish/wwwroot
-=======
-          path: publish/wwwroot/497a4751-6099-4d0b-9b64-3bbf41797716
->>>>>>> e2c6ae1 (v1.0)
 
-  deploy:
+  # ---------------------------------------------------------
+  # 2. TEST JOB
+  # ---------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
     needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run unit tests
+        run: dotnet test --no-build --verbosity normal
+
+      - name: Validate published output
+        run: |
+          if [ ! -f "publish/wwwroot/index.html" ]; then
+            echo "❌ index.html missing"
+            exit 1
+          fi
+          if [ ! -f "publish/wwwroot/_framework/blazor.boot.json" ]; then
+            echo "❌ blazor.boot.json missing"
+            exit 1
+          fi
+          echo "✔ Static asset validation passed"
+
+  # ---------------------------------------------------------
+  # 3. LIGHTHOUSE PERFORMANCE CHECK
+  # ---------------------------------------------------------
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Lighthouse
+        run: npm install -g lighthouse
+
+      - name: Serve published site
+        run: |
+          npm install -g http-server
+          http-server publish/wwwroot -p 8080 &
+          sleep 3
+
+      - name: Run Lighthouse
+        run: |
+          lighthouse http://localhost:8080 \
+            --quiet \
+            --chrome-flags="--headless" \
+            --output=json \
+            --output-path=./lhreport.json
+
+      - name: Check Lighthouse score
+        run: |
+          SCORE=$(jq '.categories.performance.score' lhreport.json)
+          echo "Performance score: $SCORE"
+          if (( $(echo "$SCORE < 0.80" | bc -l) )); then
+            echo "❌ Lighthouse performance score too low"
+            exit 1
+          fi
+          echo "✔ Lighthouse performance OK"
+
+  # ---------------------------------------------------------
+  # 4. DEPLOY JOB
+  # ---------------------------------------------------------
+  deploy:
+    needs: [test, lighthouse]
     environment:
       name: github-pages
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

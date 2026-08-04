@@ -1,37 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+        <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
 
-  <ItemGroup>
-    <Compile Remove="Models\EspnModels.cs" />
-    <Compile Remove="Models\MatchData.cs" />
-    <Compile Remove="Services\FamilyMemberCache.cs" />
-    <Compile Remove="Services\Services.cs" />
-    <Compile Remove="Services\TournamentCache.cs" />
-  </ItemGroup>
+        <!-- Optional but recommended: prevent SDK from re-ingesting publish/ folder -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);publish/**</DefaultItemExcludes>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="Components\FamilyLeaderBoard.razor" />
-    <Content Remove="Pages\Bracket - Copy %282%29.razor" />
-    <Content Remove="Pages\Bracket - Copy.razor" />
-    <Content Remove="Pages\Rankings.razor" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="Models\EspnModels.cs" />
+        <Compile Remove="Models\MatchData.cs" />
+        <Compile Remove="Services\FamilyMemberCache.cs" />
+        <Compile Remove="Services\Services.cs" />
+        <Compile Remove="Services\TournamentCache.cs" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
-    <PackageReference Include="MudBlazor" Version="9.7.0" />
-    <PackageReference Include="PublishSPAforGitHubPages.Build" Version="3.0.3" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Remove="Components\FamilyLeaderBoard.razor" />
+        <Content Remove="Pages\Bracket - Copy %282%29.razor" />
+        <Content Remove="Pages\Bracket - Copy.razor" />
+        <Content Remove="Pages\Rankings.razor" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
+        <PackageReference Include="MudBlazor" Version="9.7.0" />
+        <PackageReference Include="PublishSPAforGitHubPages.Build" Version="3.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Properties\PublishProfiles\" />
+    </ItemGroup>
 
 </Project>

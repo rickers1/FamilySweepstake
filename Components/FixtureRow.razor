@@ -1,5 +1,6 @@
 @* // Ignore Spelling: center py tt *@
 
+@using FamilySweepstake.Extensions
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
 @using static FamilySweepstake.Models.Constants
@@ -60,10 +61,7 @@
         _wideLayout = (bp >= Breakpoint.Sm);
 
         _matchStartTypoSize = !_wideLayout ? Typo.caption : Typo.body2;
-        _scoreOrderCss = GetOrderClass(1, 2);
-        _teamOrderCss = GetOrderClass(2, 1);
+        _scoreOrderCss = _wideLayout.GetOrderClass(1, 2);
+        _teamOrderCss = _wideLayout.GetOrderClass(2, 1);
     }
-
-    private string GetOrderClass(int leftOrder, int rightOrder, string? otherClasses = null)
-        => $"order-{(_wideLayout ? leftOrder : rightOrder)} {otherClasses}".Trim();
 }
