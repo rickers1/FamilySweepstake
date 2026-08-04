@@ -174,7 +174,7 @@ else
     [Parameter] public string TournamentCode { get; set; } = DEFAULT_CODE;
 
     private bool _isLoading = true;
-    private bool _animate = false;
+    // private bool _animate = false;
     private int _activeRound = 0;
 
     private List<FixtureModel> _fixtures = [];
@@ -222,7 +222,7 @@ else
 
         UpdateVisibleRounds();
 
-        _animate = true;
+        // _animate = true;
     }
 
     /// <summary>
@@ -232,9 +232,9 @@ else
     private void OnRoundSelected(int roundIdx)
     {
         _activeRound = roundIdx;
-        _animate = false;
+        // _animate = false;
         UpdateVisibleRounds();
-        _animate = true;
+        // _animate = true;
     }
 
     /// <summary>
