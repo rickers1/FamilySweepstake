@@ -52,17 +52,6 @@ jobs:
       - name: Publish Blazor
         run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true
 
-      # 🏗️ Cache busting for GitHub Pages CDN
-      - name: Add cache-busting version to blazor.boot.json
-        run: |
-          VERSION=$(date -u '+%Y%m%d%H%M%S')
-          jq --arg v "$VERSION" '
-            .resources.js |= with_entries(.value |= (. + "?v=" + $v)) |
-            .resources.css |= with_entries(.value |= (. + "?v=" + $v)) |
-            .resources.wasm |= with_entries(.value |= (. + "?v=" + $v))
-          ' publish/wwwroot/_framework/blazor.boot.json > publish/wwwroot/_framework/blazor.boot.tmp.json
-          mv publish/wwwroot/_framework/blazor.boot.tmp.json publish/wwwroot/_framework/blazor.boot.json
-
       # Upload artifact for Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
