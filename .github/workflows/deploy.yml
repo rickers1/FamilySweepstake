@@ -50,7 +50,7 @@ jobs:
 
       # 📦 Publish Blazor WASM
       - name: Publish Blazor
-        run: dotnet publish -c Release -o publish
+        run: dotnet publish -c Release -o publish -p:GHPages=true
 
       # 🏗️ Cache busting for GitHub Pages CDN
       - name: Add cache-busting version to blazor.boot.json
