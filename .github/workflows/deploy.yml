@@ -124,6 +124,7 @@ jobs:
           lighthouse http://localhost:8080 \
             --quiet \
             --chrome-flags="--headless" \
+            --preset=desktop \
             --output=json \
             --output-path=./lhreport.json
 
