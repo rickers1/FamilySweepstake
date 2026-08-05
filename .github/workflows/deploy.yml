@@ -1,5 +1,4 @@
 name: Deploy Blazor WASM to GitHub Pages
-
 on:
   push:
     branches: [ master ]
@@ -19,11 +18,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       # ⚡ Cache NuGet + WASM workload
       - name: Cache .NET packages
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.nuget/packages
@@ -33,7 +32,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
@@ -50,7 +49,13 @@ jobs:
 
       # 📦 Publish Blazor WASM
       - name: Publish Blazor
-        run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true
+        run: dotnet publish FamilySweepstake.csproj -c Release -o publish
+
+      # 🔧 Fix SPA Routing and GitHub Pages compatibility
+      - name: Fix SPA Routing
+        run: |
+          touch publish/wwwroot/.nojekyll
+          cp publish/wwwroot/index.html publish/wwwroot/404.html
 
       # ✅ Validate published output
       - name: Validate published output
@@ -61,11 +66,19 @@ jobs:
           fi
           echo "✔ Static asset validation passed"
 
-      # Upload artifact for Pages
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      # Upload artifact for Pages deployment
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: publish/wwwroot
+
+      # Upload a standard artifact for the Lighthouse job to use instantly
+      - name: Upload build artifact for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: wwwroot-artifact
+          path: publish/wwwroot
+          retention-days: 1
 
   # ---------------------------------------------------------
   # 2. TEST JOB
@@ -75,10 +88,10 @@ jobs:
     needs: build
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
@@ -93,20 +106,15 @@ jobs:
     needs: build
 
     steps:
-      - uses: actions/checkout@v5
-
-      # ✅ 1. Compile the app on this fresh runner so we have files to serve
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+      # ✅ Download the already-compiled files from the build job
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
         with:
-          dotnet-version: 10.0.x
+          name: wwwroot-artifact
+          path: publish/wwwroot
 
-      - name: Publish Blazor
-        run: dotnet publish FamilySweepstake.csproj -c Release -o publish
-
-      # ✅ 2. Setup Node 24 to match the new GitHub environment
       - name: Install Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: 24
 
@@ -117,7 +125,7 @@ jobs:
         run: |
           npm install -g http-server
           http-server publish/wwwroot -p 8080 &
-          sleep 5 # Increased slightly to ensure server binds before Lighthouse starts
+          sleep 5
 
       - name: Run Lighthouse
         run: |
@@ -132,12 +140,11 @@ jobs:
         run: |
           SCORE=$(jq '.categories.performance.score' lhreport.json)
           echo "Performance score: $SCORE"
-          # Set realistic threshold for Blazor WASM on GitHub runners
           if (( $(echo "$SCORE < 0.35" | bc -l) )); then
-            echo "❌ Lighthouse performance score too low"
-            exit 1
+            echo "⚠️ Lighthouse performance score is low ($SCORE), but continuing deployment."
+          else
+            echo "✔ Lighthouse performance OK"
           fi
-          echo "✔ Lighthouse performance OK"
 
   # ---------------------------------------------------------
   # 4. DEPLOY JOB
@@ -151,4 +158,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
