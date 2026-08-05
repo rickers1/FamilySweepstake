@@ -52,9 +52,14 @@ jobs:
         run: dotnet publish FamilySweepstake.csproj -c Release -o publish
 
       # 🔧 Fix SPA Routing and GitHub Pages compatibility
-      - name: Fix SPA Routing
+      - name: Fix SPA Routing and Base Href
         run: |
           touch publish/wwwroot/.nojekyll
+          
+          # Dynamically update the base href to match your GitHub repository name
+          sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' publish/wwwroot/index.html
+          
+          # Copy the corrected index.html for SPA fallback routing
           cp publish/wwwroot/index.html publish/wwwroot/404.html
 
       # ✅ Validate published output
