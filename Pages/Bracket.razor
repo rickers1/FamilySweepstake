@@ -26,11 +26,11 @@
 }
 else
 {
-    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+    <MudButtonGroup Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled">
         @for (int i = 0; i < _groupedRounds.Count; i++)
         {
             var roundIdx = i; // Need `roundIdx` as `i` is maxed out after rendering
-            <MudButton OnClick="@(() => OnRoundSelected(roundIdx))" Disabled="@(roundIdx == _activeRound)" Class="mx-1">
+            <MudButton Size="Size.Small" OnClick="@(() => OnRoundSelected(roundIdx))" Disabled="@(roundIdx == _activeRound)" Class="mx-1">
                 @RoundLabel(roundIdx)
             </MudButton>
         }

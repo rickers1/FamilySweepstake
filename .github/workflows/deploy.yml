@@ -46,9 +46,17 @@ jobs:
           echo "  commit: \"${GITHUB_SHA}\"" >> wwwroot/version.js
           echo "};" >> wwwroot/version.js
 
-      # 📦 Publish Blazor WASM (Restored the GHPages=true flag for the NuGet package)
+
+      # 📦 Publish standard Blazor WASM
       - name: Publish Blazor
-        run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true -p:GHPagesBase=/FamilySweepstake/
+        run: dotnet publish FamilySweepstake.csproj -c Release -o publish
+
+      # 🔧 Explicitly fix Base Href, .nojekyll, and SPA routing for GitHub Pages
+      - name: Fix GitHub Pages Routing and Base Path
+        run: |
+          touch publish/wwwroot/.nojekyll
+          sed -i 's|<base href="/" />|<base href="/FamilySweepstake/" />|g' publish/wwwroot/index.html
+          cp publish/wwwroot/index.html publish/wwwroot/404.html
 
       # ✅ Validate published output
       - name: Validate published output
@@ -59,9 +67,9 @@ jobs:
           fi
           echo "✔ Static asset validation passed"
 
-      # Upload Pages artifact (using @main as you preferred)
+      # Upload Pages artifact
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@main
+        uses: actions/upload-pages-artifact@v7 #@main
         with:
           path: publish/wwwroot
 
