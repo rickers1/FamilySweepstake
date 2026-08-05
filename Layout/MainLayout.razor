@@ -36,10 +36,10 @@ else
             <MudNavMenu>
                 @if (!string.IsNullOrEmpty(CacheSvc.Tournaments.CurrentTournamentCode))
                 {
-                    <MudNavLink Href="@($"/leaderboard/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.Leaderboard">Leaderboard</MudNavLink>
-                    <MudNavLink Href="@($"/bracket/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.AccountTree">Bracket</MudNavLink>
-                    <MudNavLink Href="@($"/pools/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.ViewModule">Pools</MudNavLink>
-                    <MudNavLink Href="@($"/fixtures/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.CalendarMonth">Fixtures</MudNavLink>
+                    <MudNavLink Href="@($"leaderboard/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.Leaderboard">Leaderboard</MudNavLink>
+                    <MudNavLink Href="@($"bracket/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.AccountTree">Bracket</MudNavLink>
+                    <MudNavLink Href="@($"pools/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.ViewModule">Pools</MudNavLink>
+                    <MudNavLink Href="@($"fixtures/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.CalendarMonth">Fixtures</MudNavLink>
                 }
 
                 <MudNavGroup Title="Change Tournament" Icon="@Icons.Material.Filled.SwapHoriz">
@@ -103,6 +103,6 @@ else
     private string GetTournamentHref(string targetTournamentCode)
     {
         var segments = NavManager.ToBaseRelativePath(NavManager.Uri).Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return $"/{((segments.Length != 0) ? segments[0] : "leaderboard")}/{targetTournamentCode}";
+        return $"{((segments.Length != 0) ? segments[0] : "leaderboard")}/{targetTournamentCode}";
     }
 }
