@@ -69,7 +69,7 @@ jobs:
 
       # Upload Pages artifact
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v7 #@main
+        uses: actions/upload-pages-artifact@main
         with:
           path: publish/wwwroot
 
