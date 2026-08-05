@@ -1,0 +1,8 @@
+<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading @WhatsIsLoading...</MudText>
+</MudStack>
+
+@code {
+    [Parameter] public string? WhatsIsLoading { get; set; }
+}

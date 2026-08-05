@@ -9,20 +9,11 @@
 
 @inject CacheService CacheSvc
 
-<MudText Typo="Typo.h4" Class="mb-4">Playoff Bracket</MudText>
-
-<MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
-<MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+<PageHeader ColouredIcon="@BRACKET_COLOURED_ICON" Text="Playoff Bracket" />
 
 @if (_isLoading)
 {
-    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading bracket...</MudText>
-    </MudStack>
+    <LoadingSpinner WhatsIsLoading="brackets" />
 }
 else
 {
@@ -356,14 +347,14 @@ else
     /// <summary>
     /// Gets the human-readable label for a specific tournament round.
     /// </summary>
-    private string RoundLabel(int round) => round switch
+    private string RoundLabel(int round) => (_groupedRounds.Count - round) switch
     {
-        0 => "Round of 32",
-        1 => "Round of 16",
-        2 => "Quarterfinals",
-        3 => "Semifinals",
-        4 => "Finals",
-        _ => $"Round {round}"
+        1 => "Finals",
+        2 => "Semifinals",
+        3 => "Quarterfinals",
+        4 => "Round of 16",
+        5 => "Round of 32",
+        _ => $"Round {round + 1}" // Added + 1 so the UI reads "Round 1" instead of "Round 0"
     };
 
     /// <summary>

@@ -11,6 +11,7 @@
     {
         <MudIcon Size="Size.Large">@ShowMedalIcon</MudIcon>
     }
+
     <MudBadge Visible="@(_team?.WorldRanking is not null)" Content="@_team!.WorldRanking" Overlap="true" Class="@_flagOrderCss" Color="Color.Primary">
         <MudImage Src="@_team?.FlagUrl" Alt="@_team?.Code" Width="45" Class="rounded-sm" Elevation="1" />
     </MudBadge>
@@ -24,7 +25,9 @@
     }
     else
     {
-        <MudText Typo="Typo.body2">@_team?.Name</MudText>
+        <MudStack Row Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="@_nameOrderCss">
+            <MudText Typo="Typo.body2">@_team?.Name</MudText>
+        </MudStack>
     }
 
 </MudStack>
@@ -34,14 +37,15 @@
     [Parameter] public string? ShowMedalIcon { get; set; }
     [Parameter] public Guid? OwnerId { get; set; }
     [Parameter] public bool ShowOwner { get; set; }
-    [Parameter] public bool RightAlign { get; set; }
+    [Parameter] public bool FlagToTheRight { get; set; }
 
     private TeamModel? _team;
     private FamilyMemberModel? _teamOwner;
     private string _ownerColoursCss = default!;
     private string _flagOrderCss = default!;
     private string _nameOrderCss = default!;
-    const string DEFAULT_AVATAR = "?";
+    private const string DEFAULT_AVATAR = "?";
+    private const string DEFAULT_NAME_CSS = "flex-grow-1 px-2";
 
     protected override void OnParametersSet()
     {
@@ -53,7 +57,7 @@
             _teamOwner = CacheSvc.FamilyMembers.GetOrDefault(OwnerId);
             _ownerColoursCss = $"background-color:{_teamOwner.BackgroundColor}; color:{_teamOwner.ForegroundColor};";
         }
-        _flagOrderCss = RightAlign.GetOrderClass(1, 2);
-        _nameOrderCss = RightAlign.GetOrderClass(2, 1, "flex-grow-1 px-2");
+        _flagOrderCss = FlagToTheRight.GetOrderClass(1, 2);
+        _nameOrderCss = FlagToTheRight.GetOrderClass(2, 1, DEFAULT_NAME_CSS);
     }
 }

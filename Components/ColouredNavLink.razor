@@ -1,0 +1,25 @@
+@using FamilySweepstake.Models
+@using FamilySweepstake.Services
+
+@inject CacheService CacheSvc
+@inject NavigationManager NavManager
+
+<MudNavLink Href="@($"{BaseUrl}/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icon" IconColor="@IconColour">@Text</MudNavLink>
+
+@code {
+    [Parameter, EditorRequired] public string BaseUrl { get; set; }
+    [Parameter, EditorRequired] public string Text { get; set; }
+    [Parameter] public ColouredIcon? ColouredIcon { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Color IconColour { get; set; } = Color.Default;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (ColouredIcon is null) return;
+
+        Icon = ColouredIcon.Icon;
+        IconColour = ColouredIcon.Colour;
+    }
+}

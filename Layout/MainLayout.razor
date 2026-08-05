@@ -1,11 +1,14 @@
 @* // Ignore Spelling: leaderboard *@
 
+@using FamilySweepstake.Components
 @using FamilySweepstake.Services
+@using static FamilySweepstake.Models.Constants
 
 @implements IDisposable
 @inherits LayoutComponentBase
 @inject CacheService CacheSvc
 @inject NavigationManager NavManager
+
 
 @if (!_initialized)
 {
@@ -36,10 +39,10 @@ else
             <MudNavMenu>
                 @if (!string.IsNullOrEmpty(CacheSvc.Tournaments.CurrentTournamentCode))
                 {
-                    <MudNavLink Href="@($"leaderboard/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.Leaderboard">Leaderboard</MudNavLink>
-                    <MudNavLink Href="@($"bracket/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.AccountTree">Bracket</MudNavLink>
-                    <MudNavLink Href="@($"pools/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.ViewModule">Pools</MudNavLink>
-                    <MudNavLink Href="@($"fixtures/{CacheSvc.Tournaments.CurrentTournamentCode}")" Icon="@Icons.Material.Filled.CalendarMonth">Fixtures</MudNavLink>
+                    <ColouredNavLink BaseUrl="leaderboard" ColouredIcon="@LEADERBOARD_COLOURED_ICON" Text="Leaderboard" />
+                    <ColouredNavLink BaseUrl="bracket" ColouredIcon="@BRACKET_COLOURED_ICON" Text="Bracket" />
+                    <ColouredNavLink BaseUrl="pools" ColouredIcon="@POOLS_COLOURED_ICON" Text="Pools" />
+                    <ColouredNavLink BaseUrl="fixtures" ColouredIcon="@FIXTURES_COLOURED_ICON" Text="Fixtures" />
                 }
 
                 <MudNavGroup Title="Change Tournament" Icon="@Icons.Material.Filled.SwapHoriz">
@@ -60,8 +63,8 @@ else
 }
 
 @code {
-    private bool _initialized = false;
-    private bool _drawerOpen = true;
+    private bool _initialized;
+    private bool _drawerOpen;
     private MudTheme _theme = new();
     private bool _isDarkMode = true;
 

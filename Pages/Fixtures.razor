@@ -9,20 +9,11 @@
 
 @inject CacheService CacheSvc
 
-<MudText Typo="Typo.h4" Class="mb-4">Fixtures</MudText>
-
-<MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
-<MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+<PageHeader ColouredIcon="FIXTURES_COLOURED_ICON" Text="Fixtures" />
 
 @if (_isLoading)
 {
-    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading fixtures...</MudText>
-    </MudStack>
+    <LoadingSpinner WhatsIsLoading="fixtures" />
 }
 else
 {

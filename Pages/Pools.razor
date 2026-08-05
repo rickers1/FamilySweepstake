@@ -5,24 +5,15 @@
 @using FamilySweepstake.Services
 @using FamilySweepstake.ViewModels
 
+@using static FamilySweepstake.Models.Constants
+
 @inject CacheService CacheSvc
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-    <MudText Typo="Typo.h4">Pool Play & Standings</MudText>
-</MudStack>
-
-<MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
-<MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
-<MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+<PageHeader ColouredIcon="@POOLS_COLOURED_ICON" Text="Pool Play & Standings" />
 
 @if (_isLoading)
 {
-    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-16">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Typo="Typo.body1" Class="mt-2 text-muted">Loading pools...</MudText>
-    </MudStack>
+    <LoadingSpinner WhatsIsLoading="pools" />
 }
 else
 {

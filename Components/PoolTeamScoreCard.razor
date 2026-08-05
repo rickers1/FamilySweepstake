@@ -1,34 +1,39 @@
+@* // Ignore Spelling: center  *@
+
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
 @using FamilySweepstake.ViewModels
 
 @inject CacheService CacheSvc
 
-<MudGrid Spacing="0" Class="align-center text-center">
-    <MudItem xs="10" sm="8" md="9">
-    </MudItem>
+@if (ShowColHeaders)
+{
+    <MudGrid Spacing="0" Class="align-center text-center">
+        <MudItem xs="10" sm="8" md="9">
+        </MudItem>
 
-    <MudHidden Breakpoint="Breakpoint.Xs">
-        @if (ShowWDL)
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            @if (ShowWDL)
+            {
+                <MudItem xs="0" sm="2" md="1">
+                    W-D-L
+                </MudItem>
+                <MudItem xs="0" sm="1" md="1">
+                    <MudText Typo="Typo.body2">
+                        @_otherHeader
+                    </MudText>
+                </MudItem>
+            }
+        </MudHidden>
+
+        @if (ShowPoints)
         {
-            <MudItem xs="0" sm="2" md="1">
-                W-D-L
-            </MudItem>
-            <MudItem xs="0" sm="1" md="1">
-                <MudText Typo="Typo.body2">
-                    @_otherHeader
-                </MudText>
+            <MudItem xs="2" sm="1" md="1">
+                Points
             </MudItem>
         }
-    </MudHidden>
-
-    @if (ShowPoints)
-    {
-        <MudItem xs="2" sm="1" md="1">
-            Points
-        </MudItem>
-    }
-</MudGrid>
+    </MudGrid>
+}
 
 @foreach (var team in Teams)
 {
@@ -65,10 +70,15 @@
             </MudItem>
         }
     </MudGrid>
+
+    @TeamContent
 }
 
 @code {
     [Parameter, EditorRequired] public IEnumerable<PoolStandingModel> Teams { get; set; } = [];
+    [Parameter] public RenderFragment? TeamContent { get; set; }
+
+    [Parameter] public bool ShowColHeaders { get; set; } = true;
     [Parameter] public bool ShowOwner { get; set; } = true;
     [Parameter] public bool ShowWDL { get; set; } = false;
     [Parameter] public bool ShowPoints { get; set; } = true;

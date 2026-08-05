@@ -12,16 +12,9 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
         <PackageReference Include="MudBlazor" Version="9.7.0" />
-        <!--<PackageReference Include="PublishSPAforGitHubPages.Build" Version="3.0.3" />-->
     </ItemGroup>
 
     <ItemGroup>
         <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <!-- Keep the Docs folder in Visual Studio, but never copy it to the build output -->
-        <Content Update="Docs\**" CopyToOutputDirectory="Never" />
-        <None Update="Docs\**" CopyToOutputDirectory="Never" />
     </ItemGroup>
 </Project>

@@ -10,19 +10,20 @@
 </MudStack>
 
 @code {
-        [Parameter, EditorRequired] public string TeamCode { get; set; } = default!;
-        [Parameter, EditorRequired] public int? Score { get; set; }
-        [Parameter] public int? ScorePens { get; set; }    // Penalties
-        [Parameter] public bool? Winner { get; set; }
-        [Parameter] public bool Draw { get; set; }
-        [Parameter] public bool RightAlign { get; set; }
+    [Parameter, EditorRequired] public string TeamCode { get; set; } = default!;
+    [Parameter, EditorRequired] public int? Score { get; set; }
+    [Parameter] public int? ScorePens { get; set; }    // Penalties
+    [Parameter] public bool? Winner { get; set; }
+    [Parameter] public bool Draw { get; set; }
+    [Parameter] public bool AlignRight { get; set; }
 
     private Color _scoreColour = Color.Info;
     private Justify _scoreJustify = Justify.FlexStart;
 
     protected override void OnParametersSet()
     {
-        _scoreJustify = RightAlign ? Justify.FlexEnd : Justify.FlexStart;
+        _scoreJustify = AlignRight ? Justify.FlexEnd : Justify.FlexStart;
+
         if (Winner is true)
             _scoreColour = Color.Success;
         else if (Draw)
