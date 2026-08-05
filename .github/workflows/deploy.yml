@@ -18,11 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # ⚡ Cache NuGet + WASM workload
       - name: Cache .NET packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.nuget/packages
@@ -32,7 +31,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -47,20 +46,9 @@ jobs:
           echo "  commit: \"${GITHUB_SHA}\"" >> wwwroot/version.js
           echo "};" >> wwwroot/version.js
 
-      # 📦 Publish Blazor WASM
+      # 📦 Publish Blazor WASM (Restored the GHPages=true flag for the NuGet package)
       - name: Publish Blazor
-        run: dotnet publish FamilySweepstake.csproj -c Release -o publish
-
-      # 🔧 Fix SPA Routing and GitHub Pages compatibility
-      - name: Fix SPA Routing and Base Href
-        run: |
-          touch publish/wwwroot/.nojekyll
-          
-          # Dynamically update the base href to match your GitHub repository name
-          sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' publish/wwwroot/index.html
-          
-          # Copy the corrected index.html for SPA fallback routing
-          cp publish/wwwroot/index.html publish/wwwroot/404.html
+        run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true
 
       # ✅ Validate published output
       - name: Validate published output
@@ -71,15 +59,15 @@ jobs:
           fi
           echo "✔ Static asset validation passed"
 
-      # Upload artifact for Pages deployment
+      # Upload Pages artifact (using @main as you preferred)
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@main
         with:
           path: publish/wwwroot
 
-      # Upload a standard artifact for the Lighthouse job to use instantly
+      # Upload build artifact for testing job
       - name: Upload build artifact for testing
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wwwroot-artifact
           path: publish/wwwroot
@@ -93,10 +81,10 @@ jobs:
     needs: build
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -111,15 +99,14 @@ jobs:
     needs: build
 
     steps:
-      # ✅ Download the already-compiled files from the build job
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: wwwroot-artifact
           path: publish/wwwroot
 
       - name: Install Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -163,4 +150,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
