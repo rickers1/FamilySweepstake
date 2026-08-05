@@ -48,7 +48,7 @@ jobs:
 
       # 📦 Publish Blazor WASM (Restored the GHPages=true flag for the NuGet package)
       - name: Publish Blazor
-        run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true
+        run: dotnet publish FamilySweepstake.csproj -c Release -o publish -p:GHPages=true -p:GHPagesBase=/FamilySweepstake/
 
       # ✅ Validate published output
       - name: Validate published output
