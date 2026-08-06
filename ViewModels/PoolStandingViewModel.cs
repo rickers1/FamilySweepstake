@@ -17,7 +17,7 @@ public record PoolStandingViewModel(
     [property: JsonPropertyName("fifa_point_deductions")] short FifaPointDeductions,
     [property: JsonPropertyName("advance_to_playoffs")] bool AdvanceToPlayoffs,
     [property: JsonPropertyName("owner_id")] Guid? OwnerId
-) : ITeamBaseViewModel
+)
 {
     public PoolStandingViewModel(PoolStandingModel pool, TeamOwnershipModel? owner)
         : this(

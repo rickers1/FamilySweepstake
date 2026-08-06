@@ -21,7 +21,7 @@ public class FixtureModel
     [property: JsonPropertyName("home_win")] public bool HomeWin { get; set; }
 
     [property: JsonPropertyName("is_playoffs")] public bool IsPlayoffs { get; set; }
-    [property: JsonPropertyName("bracket_slot")] public string? BracketSlot { get; set; }
+    [property: JsonPropertyName("bracket_slot")] public string? BracketSlotViewModel { get; set; }
 
     [property: JsonPropertyName("is_completed")] public bool IsCompleted { get; set; }
     [property: JsonPropertyName("match_clock")] public string? MatchClock { get; set; }

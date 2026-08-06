@@ -3,8 +3,10 @@
 @page "/bracket/{TournamentCode}"
 
 @using FamilySweepstake.Components
+@using FamilySweepstake.Extensions
 @using FamilySweepstake.Models
 @using FamilySweepstake.Services
+@using FamilySweepstake.ViewModels
 @using static FamilySweepstake.Models.Constants
 
 @inject CacheService CacheSvc
@@ -22,7 +24,7 @@ else
         {
             var roundIdx = i; // Need `roundIdx` as `i` is maxed out after rendering
             <MudButton Size="Size.Small" OnClick="@(() => OnRoundSelected(roundIdx))" Disabled="@(roundIdx == _activeRound)" Class="mx-1">
-                @RoundLabel(roundIdx)
+                @_groupedRounds[roundIdx].Stage
             </MudButton>
         }
     </MudButtonGroup>
@@ -31,18 +33,16 @@ else
         @for (int i = 0; i < _groupedRounds.Count; i++)
         {
             var roundIdx = i;
-            var group = _groupedRounds[i];
-            var roundSize = group.Key;
+            var round = _groupedRounds[i];
 
-            if (roundIdx < _activeRound)
-                continue;
+            if (roundIdx < _activeRound) continue;
 
-            <div class="bracket-round @(roundSize == 2 ? "medal-round" : "")">
-                @if (roundSize == 2)
+            <div class="bracket-round @(round.IsMedalRound ? "medal-round" : "")">
+                @if (round.IsMedalRound)
                 {
                     // Medal Round: Center the Gold match and hang the Bronze match below it.
-                    var goldMatch = group.FirstOrDefault(m => Decode(m.BracketSlot!).Slot == 2);
-                    var bronzeMatch = group.FirstOrDefault(m => Decode(m.BracketSlot!).Slot == 1);
+                    var goldMatch = round.Fixtures.FirstOrDefault(m => m.BracketSlotViewModel!.ParseSlot().SlotIndex == 1);
+                    var bronzeMatch = round.Fixtures.FirstOrDefault(m => m.BracketSlotViewModel!.ParseSlot().SlotIndex == 2);    
 
                     <div class="bracket-match-wrapper gold-match">
                         <div style="position: relative; width: 100%;">
@@ -82,7 +82,7 @@ else
                 else
                 {
                     // Standard Match Output
-                    @foreach (var match in group)
+                    @foreach (var match in round.Fixtures)
                     {
                         <div class="bracket-match-wrapper" id="@GetFixtureId(match)">
                             <MudPaper Elevation="3" Class="pa-3" Style="width: 100%;">
@@ -204,19 +204,18 @@ else
     [Parameter] public string TournamentCode { get; set; } = DEFAULT_CODE;
 
     private bool _isLoading = true;
-    // private bool _animate = false;
     private int _activeRound = 0;
 
     private List<FixtureModel> _fixtures = [];
 
     // Structures flat fixtures into an ordered hierarchy for rendering
-    private List<IGrouping<int, FixtureModel>> _groupedRounds = [];
-    private List<IGrouping<int, FixtureModel>> _visibleRounds = [];
+    private List<BracketRoundViewModel> _groupedRounds = [];
+    private List<BracketRoundViewModel> _visibleRounds = [];
     private List<string> _medalIcons = [];
     private List<string> GoldMedalIcons => [.. _medalIcons.Take(2)];
     private List<string> BronzeMedalIcons => [.. _medalIcons.Skip(2).Take(2)];
 
-    override protected void OnInitialized()
+    protected override void OnInitialized()
     {
         base.OnInitialized();
 
@@ -244,15 +243,21 @@ else
 
         BuildBracketDetail();
 
-        _groupedRounds = _fixtures
-            .OrderBy(f => Decode(f.BracketSlot!).Slot) // Sort by slot (1, 2, 3...) first
-            .GroupBy(f => Decode(f.BracketSlot!).RoundSize)
-            .OrderByDescending(g => g.Key)
-            .ToList();
+        _groupedRounds = [.. _fixtures
+            .OrderBy(f => f.BracketSlotViewModel.ParseSlot().SlotIndex)
+            .GroupBy(f => BuildRoundKey(f.BracketSlotViewModel!, f.Stage ?? DEFAULT_NAME))
+            .Select(g => new BracketRoundViewModel(roundSize: g.Key.RoundSize, stage: g.Key.Stage, isMedalRound: g.Key.IsMedalRound, fixtures: [.. g]))
+            .OrderByDescending(r => r.RoundSize)
+            .ThenBy(r => r.Stage)];
 
         UpdateVisibleRounds();
+    }
 
-        // _animate = true;
+    private (int RoundSize, string Stage, bool IsMedalRound) BuildRoundKey(string bracketSlot, string stage)
+    {
+        var roundSize = bracketSlot.ParseSlot().RoundSize;
+        var isMedalRound = roundSize == 2;
+        return (RoundSize: roundSize, Stage: isMedalRound ? MEDAL_ROUND_STAGE_NAME : stage, IsMedalRound: isMedalRound);
     }
 
     /// <summary>
@@ -262,9 +267,7 @@ else
     private void OnRoundSelected(int roundIdx)
     {
         _activeRound = roundIdx;
-        // _animate = false;
         UpdateVisibleRounds();
-        // _animate = true;
     }
 
     /// <summary>
@@ -278,104 +281,75 @@ else
     /// </summary>
     private void BuildBracketDetail()
     {
-        var bySlot = _fixtures.ToDictionary(f => Decode(f.BracketSlot!), f => f);
+        var bySlot = _fixtures.ToDictionary(f => new BracketSlotViewModel(f.BracketSlotViewModel.ParseSlot()), f => f);
 
-        // Example mappings: Round of 8 to Semifinals, Semifinals to Finals
-        AdvanceWinner(bySlot, 8, 1, 4, 1, true);
-        AdvanceWinner(bySlot, 8, 2, 4, 1, false);
+        foreach (var fixture in _fixtures)
+        {
+            var (roundSize, slot) = fixture.BracketSlotViewModel.ParseSlot();
 
-        AdvanceWinner(bySlot, 8, 3, 4, 2, true);
-        AdvanceWinner(bySlot, 8, 4, 4, 2, false);
+            // We do not advance anyone OUT of the final round
+            if (roundSize < 4) continue;
 
-        AdvanceLoser(bySlot, 4, 1, 2, 1, true);
-        AdvanceLoser(bySlot, 4, 2, 2, 1, false);
+            // Odd slots (1, 3, 5...) go Home. Even slots (2, 4, 6...) go Away.
+            bool isHome = slot % 2 != 0;
 
-        AdvanceWinner(bySlot, 4, 1, 2, 2, true);
-        AdvanceWinner(bySlot, 4, 2, 2, 2, false);
+            if (roundSize == 4)
+            {
+                // Semifinals: Winners to Gold (Slot 1), Losers to Bronze (Slot 2)
+                AdvanceFromRound(bySlot, fixture, 2, 1, isHome);
+                AdvanceFromRound(bySlot, fixture, 2, 2, isHome, advanceTheWinner: false);
+            }
+            else
+            {
+                // Standard progression (e.g., 32 -> 16, 16 -> 8, 8 -> 4)
+                AdvanceFromRound(bySlot, fixture,
+                    toRoundSize: roundSize / 2,
+                    toSlot: (slot + 1) / 2,
+                    isHome);
+            }
+        }
     }
 
     /// <summary>
-    /// Advances the winner of a given fixture to the designated slot in a future round.
+    /// Advances either the winner or loser of a given fixture to the designated slot in a future round.
     /// </summary>
-    private void AdvanceWinner(Dictionary<BracketSlot, FixtureModel> fixtures, int fromRoundSize, int fromSlot, int toRoundSize, int toSlot, bool isHome)
+    /// <param name="fixturesByRound">The dictionary of fixtures keyed by their bracket slot.</param>
+    /// <param name="from">The originating fixture.</param>
+    /// <param name="toRoundSize">The target round size.</param>
+    /// <param name="toSlot">The target slot number.</param>
+    /// <param name="isHome">Indicates if the advancing team should be placed in the home position.</param>
+    /// <param name="advanceTheWinner">If true (or null), advances the winner. If false, advances the loser.</param>
+    private void AdvanceFromRound(Dictionary<BracketSlotViewModel, FixtureModel> fixturesByRound, FixtureModel from, int toRoundSize, int toSlot, bool isHome, bool? advanceTheWinner = true)
     {
-        var fromKey = new BracketSlot(fromRoundSize, fromSlot);
-        if (!fixtures.TryGetValue(fromKey, out var from)) return;
+        var codeToAdvance = (advanceTheWinner is true)
+            ? (from.HomeWin ? from.HomeCode : from.AwayCode)
+            : (from.HomeWin ? from.AwayCode : from.HomeCode);
 
-        var winnerCode = from.HomeWin ? from.HomeCode : from.AwayCode;
-
-        var toKey = new BracketSlot(toRoundSize, toSlot);
-        if (!fixtures.TryGetValue(toKey, out var to)) return;
+        if (!fixturesByRound.TryGetValue(new BracketSlotViewModel(toRoundSize, toSlot), out var to)) return;
 
         if (isHome)
-            to.HomeCode = winnerCode;
+            to.HomeCode = codeToAdvance;
         else
-            to.AwayCode = winnerCode;
+            to.AwayCode = codeToAdvance;
     }
-
-    /// <summary>
-    /// Advances the loser of a given fixture to the designated slot in a future round.
-    /// </summary>
-    private void AdvanceLoser(Dictionary<BracketSlot, FixtureModel> fixtures, int fromRoundSize, int fromSlot, int toRoundSize, int toSlot, bool isHome)
-    {
-        var fromKey = new BracketSlot(fromRoundSize, fromSlot);
-        if (!fixtures.TryGetValue(fromKey, out var from)) return;
-
-        var loserCode = from.HomeWin ? from.AwayCode : from.HomeCode;
-
-        var toKey = new BracketSlot(toRoundSize, toSlot);
-        if (!fixtures.TryGetValue(toKey, out var to)) return;
-
-        if (isHome)
-            to.HomeCode = loserCode;
-        else
-            to.AwayCode = loserCode;
-    }
-
-    /// <summary>
-    /// Decodes a string-based bracket slot into a structured object.
-    /// </summary>
-    private static BracketSlot Decode(string slot)
-    {
-        var sIndex = slot.IndexOf('s');
-        var r = int.Parse(slot[1..sIndex]);
-        var s = int.Parse(slot[(sIndex + 1)..]);
-
-        return new BracketSlot(r, s);
-    }
-
-    /// <summary>
-    /// Gets the human-readable label for a specific tournament round.
-    /// </summary>
-    private string RoundLabel(int round) => (_groupedRounds.Count - round) switch
-    {
-        1 => "Finals",
-        2 => "Semifinals",
-        3 => "Quarterfinals",
-        4 => "Round of 16",
-        5 => "Round of 32",
-        _ => $"Round {round + 1}" // Added + 1 so the UI reads "Round 1" instead of "Round 0"
-    };
 
     /// <summary>
     /// Generates a unique HTML element identifier for a given fixture.
     /// </summary>
     private string GetFixtureId(FixtureModel f)
-        => $"match-{f.BracketSlot}";
+        => $"match-{f.BracketSlotViewModel}";
 
     /// <summary>
     /// Calculates the identifier of the next chronological fixture for the winner of this fixture.
     /// </summary>
     private string? GetNextFixtureId(FixtureModel f)
     {
-        var slot = Decode(f.BracketSlot!);
+        var slot = f.BracketSlotViewModel.ParseSlot();
 
         int nextRoundSize = slot.RoundSize / 2;
         if (nextRoundSize < 2) return null;
 
-        var nextSlot = (int)Math.Ceiling(slot.Slot / 2.0);
+        var nextSlot = (int)Math.Ceiling(slot.SlotIndex / 2.0);
         return $"match-r{nextRoundSize}s{nextSlot}";
     }
-
-    private record BracketSlot(int RoundSize, int Slot);
 }

@@ -4,11 +4,11 @@ using FamilySweepstake.Models;
 
 namespace FamilySweepstake.ViewModels;
 
-public record OwnerLeaderboardEntry(
+public record LeaderboardViewModel(
     FamilyMemberModel Owner,
     int Ranking,
     int TotalPoints,
-    IReadOnlyList<TeamLeaderboardEntry?>? Teams
+    IReadOnlyList<TeamLeaderboardViewModel?>? Teams
 )
 {
     public string OwnerColoursCss =>

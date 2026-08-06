@@ -73,7 +73,7 @@ else
     [Parameter] public string TournamentCode { get; set; } = DEFAULT_CODE;
 
     private bool _isLoading = true;
-    private IEnumerable<OwnerLeaderboardEntry> leaderboard = [];
+    private IEnumerable<LeaderboardViewModel> leaderboard = [];
     private List<string> _rankingIcons = [];
 
     protected override void OnInitialized()
@@ -95,7 +95,7 @@ else
         _isLoading = false;
     }
 
-    private async Task<IEnumerable<OwnerLeaderboardEntry>> BuildLeaderboard()
+    private async Task<IEnumerable<LeaderboardViewModel>> BuildLeaderboard()
     {
         var standingsData = await CacheSvc.Service.GetPoolStandingsAsync(CacheSvc.Tournaments.CurrentTournamentId!);
         var standings = standingsData.ToDictionary(k => k.TeamCode, v => v, StringComparer.OrdinalIgnoreCase);
@@ -134,7 +134,7 @@ else
 
                         fixturesByTeam.TryGetValue(o.TeamCode!, out var fx);
 
-                        return new TeamLeaderboardEntry(o.TeamCode!, standing, standing.Points, fx ?? []);
+                        return new TeamLeaderboardViewModel(o.TeamCode!, standing, standing.Points, fx ?? []);
                     })
                     .Where(t => t is not null)
                     .ToList();
@@ -146,7 +146,7 @@ else
             .OrderByDescending(e => e.Total);
 
         return ordered
-            .Select((e, index) => new OwnerLeaderboardEntry(e.Owner, index + 1, e.Total, e.Teams))
+            .Select((e, index) => new LeaderboardViewModel(e.Owner, index + 1, e.Total, e.Teams))
             .ToList();
     }
 

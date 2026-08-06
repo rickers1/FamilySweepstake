@@ -4,7 +4,7 @@ using FamilySweepstake.Models;
 
 namespace FamilySweepstake.ViewModels;
 
-public record TeamLeaderboardEntry(
+public record TeamLeaderboardViewModel(
     string TeamCode,
     PoolStandingModel Standing,
     int PointsAwarded,

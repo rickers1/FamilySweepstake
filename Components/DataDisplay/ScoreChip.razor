@@ -23,12 +23,12 @@
     protected override void OnParametersSet()
     {
         _scoreJustify = AlignRight ? Justify.FlexEnd : Justify.FlexStart;
-
-        if (Winner is true)
-            _scoreColour = Color.Success;
-        else if (Draw)
-            _scoreColour = Color.Warning;
-        else if (Winner is false)
-            _scoreColour = Color.Error;
+                _scoreColour = Winner switch
+        {
+            true => Color.Success,
+            false when Draw => Color.Warning,
+            false => Color.Error,
+            _ => Color.Info // No Winner
+        };
     }
 }

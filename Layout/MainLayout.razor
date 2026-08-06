@@ -85,12 +85,16 @@ else
         => NavManager.LocationChanged -= OnLocationChanged;
 
     /// <summary>
-    /// Forces the layout to re-render to update dynamic links when the route changes.
+    /// Forces the layout to re-render to update dynamic links when the route changes,
+    /// and closes the navigation drawer.
     /// </summary>
     /// <param name="sender">The event sender.</param>
     /// <param name="e">The location changed event arguments.</param>
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        => StateHasChanged();
+    {
+        _drawerOpen = false;
+        StateHasChanged();
+    }
 
     /// <summary>
     /// Toggles the visibility state of the navigation drawer.

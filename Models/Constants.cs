@@ -16,6 +16,7 @@ public class Constants
     public const string MEDAL_ROUND_PREFIX = "r2s";
     public const string GOLD_MEDAL_ROUND_PREFIX = MEDAL_ROUND_PREFIX + "2";
     public const string BRONZE_MEDAL_ROUND_PREFIX = MEDAL_ROUND_PREFIX + "1";
+    public const string MEDAL_ROUND_STAGE_NAME = "Finals";
 
     public static readonly ColouredIcon BRACKET_COLOURED_ICON = new(Icons.Material.Filled.AccountTree, Color.Success);
     public static readonly ColouredIcon FIXTURES_COLOURED_ICON = new(Icons.Material.Filled.CalendarMonth, Color.Primary);
