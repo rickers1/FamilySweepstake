@@ -12,13 +12,13 @@
     </MudText>
 </MudStack>
 
-<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+@* <MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
     <MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
     <MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
     <MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
     <MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
     <MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
-</MudBreakpointProvider>
+</MudBreakpointProvider> *@
 
 
 @code {
@@ -37,6 +37,6 @@
         IconColour = ColouredIcon.Colour;
     }
 
-    private void OnBreakpointChanged(Breakpoint bp)
-        => Console.WriteLine($"Breakpoint changed to {bp}");
+    // private void OnBreakpointChanged(Breakpoint bp)
+    //     => Console.WriteLine($"Breakpoint changed to {bp}");
 }

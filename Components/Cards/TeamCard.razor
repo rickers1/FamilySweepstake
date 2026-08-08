@@ -57,7 +57,7 @@
             _teamOwner = CacheSvc.FamilyMembers.GetOrDefault(OwnerId);
             _ownerColoursCss = $"background-color:{_teamOwner.BackgroundColor}; color:{_teamOwner.ForegroundColor};";
         }
-        _flagOrderCss = FlagToTheRight.GetOrderClass(1, 2);
-        _nameOrderCss = FlagToTheRight.GetOrderClass(2, 1, DEFAULT_NAME_CSS);
+        _nameOrderCss = FlagToTheRight.GetOrderClass(1, 2, DEFAULT_NAME_CSS);
+        _flagOrderCss = FlagToTheRight.GetOrderClass(2, 1);
     }
 }

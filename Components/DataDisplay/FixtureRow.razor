@@ -27,11 +27,11 @@
             <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@_isDraw" />
         </MudItem>
 
-        <MudItem xs="10" sm="5" md="4" Class="@_teamOrderCss">
+        <MudItem xs="10" sm="5" md="4" Class="@_awayTeamOrderCss">
             <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
         </MudItem>
 
-        <MudItem xs="2" sm="1" md="1" Class="@_scoreOrderCss">
+        <MudItem xs="2" sm="1" md="1" Class="@_awayScoreOrderCss">
             <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@_isDraw" AlignRight="_wideLayout" />
         </MudItem>
 
@@ -45,8 +45,8 @@
     private Guid? _homeTeamOwnerId;
     private Guid? _awayTeamOwnerId;
     private string _matchStart = string.Empty;
-    private string _teamOrderCss = string.Empty;
-    private string _scoreOrderCss = string.Empty;
+    private string _awayTeamOrderCss = string.Empty;
+    private string _awayScoreOrderCss = string.Empty;
     private bool _wideLayout = true;
     private bool _isDraw;
 
@@ -65,9 +65,9 @@
     {
         _wideLayout = (bp >= Breakpoint.Sm);
 
-        _scoreOrderCss = _wideLayout.GetOrderClass(1, 2);
-        _teamOrderCss = _wideLayout.GetOrderClass(2, 1);
+        _awayScoreOrderCss = _wideLayout.GetOrderClass(1, 2);
+        _awayTeamOrderCss = _wideLayout.GetOrderClass(2, 1);
 
-        Console.WriteLine($"Breakpoint changed to {bp}. Wide layout: {_wideLayout}. Score order CSS: {_scoreOrderCss}, Team order CSS: {_teamOrderCss}");
+        Console.WriteLine($"Breakpoint changed to {bp}. Wide layout: {_wideLayout}. Score order CSS: {_awayScoreOrderCss}, Team order CSS: {_awayTeamOrderCss}");
     }
 }
