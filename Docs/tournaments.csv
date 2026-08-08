@@ -1,8 +1,0 @@
-id,code,name,start_date,end_date,tournament_type
-2f0122fe-04c0-44d6-850a-4762388b0bfd,FIFA_Men_2026,2026 FIFA Men's World Cup,11/06/2026,21/07/2026,Soccer
-4fb4e479-cb2a-42f1-8336-5667b7e479e9,FIFA_Women_2023,2023 FIFA Women's World Cup,20/07/2023,21/08/2023,Soccer
-6bc36350-70bc-4fb9-a675-a656a4e568a2,Rugby15_Men_2023,2023 Rugby Men's World Cup (15s),8/09/2023,29/10/2023,Rugby15
-20670259-b0e7-4077-858d-9577bed5673f,Rugby15_Men_2027,2027 Rugby Men's World Cup (15s),1/10/2027,14/11/2027,Rugby15
-b086bd8e-cecd-4e53-bb99-9f47f18f3f72,Rugby15_Women_2021,2021 Rugby Women's World Cup (15s),8/10/2022,13/11/2022,Rugby15
-edc75354-02c2-4f68-8304-e6c84b25a697,Rugby7_Men_2022,2022 Rugby Men's World Cup (7s),9/09/2022,12/09/2022,Rugby7
-5c78174f-35fa-4afe-bd35-06a250f6f648,Rugby7_Women_2022,2022 Rugby Women's World Cup (7s),9/09/2022,12/09/2022,Rugby7

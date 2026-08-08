@@ -1,0 +1,42 @@
+@* // Ignore Spelling: mr xl xs *@
+
+@using FamilySweepstake.Models
+
+<MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Inline="true" Typo="Typo.h4">
+        @if (!string.IsNullOrWhiteSpace(Icon))
+        {
+            <MudIcon Icon="@Icon" Color="IconColour" Size="Size.Large" Class="mr-1" />
+        }
+        @Text
+    </MudText>
+</MudStack>
+
+<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged">
+    <MudHidden Breakpoint="Breakpoint.Xs" Invert>Xs-iPhone </MudHidden>
+    <MudHidden Breakpoint="Breakpoint.Sm" Invert>Sm-iPhone portrait,iPad</MudHidden>
+    <MudHidden Breakpoint="Breakpoint.Md" Invert>Md-iPad portrait</MudHidden>
+    <MudHidden Breakpoint="Breakpoint.Lg" Invert>Lg-Desktop</MudHidden>
+    <MudHidden Breakpoint="Breakpoint.Xl" Invert>Xl-Desktop</MudHidden>
+</MudBreakpointProvider>
+
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; }
+    [Parameter] public ColouredIcon? ColouredIcon { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Color IconColour { get; set; } = Color.Default;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (ColouredIcon is null) return;
+
+        Icon = ColouredIcon.Icon;
+        IconColour = ColouredIcon.Colour;
+    }
+
+    private void OnBreakpointChanged(Breakpoint bp)
+        => Console.WriteLine($"Breakpoint changed to {bp}");
+}

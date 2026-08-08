@@ -11,7 +11,12 @@
     <MudGrid Spacing="0" Class="align-center text-center">
 
         <MudItem xs="12" sm="12" md="1">
-            <MudText Typo="_matchStartTypoSize">@_matchStart</MudText>
+            <MudHidden Breakpoint="Breakpoint.SmAndUp" Invert>
+                <MudText Typo="Typo.caption">@_matchStart</MudText>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.SmAndUp">
+                <MudText Typo="Typo.body2">@_matchStart</MudText>
+            </MudHidden>
         </MudItem>
 
         <MudItem xs="10" sm="5" md="4">
@@ -19,15 +24,15 @@
         </MudItem>
 
         <MudItem xs="2" sm="1" md="1">
-            <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" />
-        </MudItem>
-
-        <MudItem xs="2" sm="1" md="1" Class="@_scoreOrderCss">
-            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@(Fixture.HomeWin == Fixture.AwayWin)" AlignRight="_wideLayout" />
+            <ScoreChip TeamCode="@Fixture.HomeCode" Score="Fixture.HomeScore" ScorePens="Fixture.HomePens" Winner="Fixture.HomeWin" Draw="@_isDraw" />
         </MudItem>
 
         <MudItem xs="10" sm="5" md="4" Class="@_teamOrderCss">
             <TeamCard TeamCode="@Fixture.AwayCode" ShowOwner OwnerId="_awayTeamOwnerId" />
+        </MudItem>
+
+        <MudItem xs="2" sm="1" md="1" Class="@_scoreOrderCss">
+            <ScoreChip TeamCode="@Fixture.AwayCode" Score="Fixture.AwayScore" ScorePens="Fixture.AwayPens" Winner="Fixture.AwayWin" Draw="@_isDraw" AlignRight="_wideLayout" />
         </MudItem>
 
     </MudGrid>
@@ -40,10 +45,10 @@
     private Guid? _homeTeamOwnerId;
     private Guid? _awayTeamOwnerId;
     private string _matchStart = string.Empty;
-    private Typo _matchStartTypoSize = Typo.body2;
     private string _teamOrderCss = string.Empty;
     private string _scoreOrderCss = string.Empty;
     private bool _wideLayout = true;
+    private bool _isDraw;
 
     protected override void OnParametersSet()
     {
@@ -53,15 +58,16 @@
 
         _homeTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.HomeCode, Fixture.IsPlayoffs);
         _awayTeamOwnerId = CacheSvc.TeamOwners.GetOwnerIdByCode(Fixture.AwayCode, Fixture.IsPlayoffs);
+        _isDraw = Fixture.HomeWin == Fixture.AwayWin;
     }
-
 
     private void OnBreakpointChanged(Breakpoint bp)
     {
         _wideLayout = (bp >= Breakpoint.Sm);
 
-        _matchStartTypoSize = !_wideLayout ? Typo.caption : Typo.body2;
         _scoreOrderCss = _wideLayout.GetOrderClass(1, 2);
         _teamOrderCss = _wideLayout.GetOrderClass(2, 1);
+
+        Console.WriteLine($"Breakpoint changed to {bp}. Wide layout: {_wideLayout}. Score order CSS: {_scoreOrderCss}, Team order CSS: {_teamOrderCss}");
     }
 }

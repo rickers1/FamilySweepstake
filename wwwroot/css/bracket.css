@@ -14,43 +14,43 @@
     position: relative;
     flex: 0 0 auto; /* Prevents resizing inside the flex container */
     /* Mobile default (xs) */
-    width: 85vw;
+    width: 95vw;
 }
 
     .bracket-round.medal-round {
-        width: 95vw;
+        width: 100vw;
     }
 
 /* sm breakpoint (Tablet) - MudBlazor uses 600px */
-@@media (min-width: 600px) {
+@media (min-width: 600px) {
     .bracket-round {
-        width: 47vw;
+        width: 48vw;
     }
 
         .bracket-round.medal-round {
-            width: 55vw;
+            width: 58vw;
         }
 }
 
 /* md breakpoint (Small Desktop) - MudBlazor uses 960px */
-@@media (min-width: 960px) {
+@media (min-width: 960px) {
     .bracket-round {
         width: 30vw;
     }
 
         .bracket-round.medal-round {
-            width: 38vw;
+            width: 35vw;
         }
 }
 
 /* lg breakpoint (Desktop) - MudBlazor uses 1280px */
-@@media (min-width: 1280px) {
+@media (min-width: 1280px) {
     .bracket-round {
-        width: 25vw;
+        width: 18vw;
     }
 
         .bracket-round.medal-round {
-            width: 30vw;
+            width: 22vw;
         }
 }
 
